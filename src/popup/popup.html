@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HonEx</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      width: 320px;
+      min-height: 400px;
+      background: #f8f9ff;
+      color: #0b1c30;
+    }
+    .container {
+      padding: 20px;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo {
+      width: 28px;
+      height: 28px;
+      background: #2563eb;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .title {
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .status-badge {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      background: #dcfce7;
+      color: #166534;
+    }
+    .status-badge.inactive {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .section {
+      background: #fff;
+      border: 1px solid #e5eeff;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #737686;
+      margin-bottom: 12px;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .toggle-label {
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .toggle {
+      width: 40px;
+      height: 22px;
+      background: #cbdbf5;
+      border-radius: 11px;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.2s;
+    }
+    .toggle.active {
+      background: #2563eb;
+    }
+    .toggle::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+    .toggle.active::after {
+      transform: translateX(18px);
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f4ff;
+    }
+    .menu-item:last-child {
+      border-bottom: none;
+    }
+    .menu-icon {
+      width: 32px;
+      height: 32px;
+      background: #eff4ff;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    .menu-text {
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .menu-arrow {
+      margin-left: auto;
+      color: #c3c6d7;
+      font-size: 16px;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+    }
+    .status-dot.inactive {
+      background: #ef4444;
+    }
+    .status-text {
+      font-size: 13px;
+      color: #434655;
+    }
+
+    .model-info {
+      font-size: 11px;
+      color: #9ca3af;
+      text-align: center;
+      padding-top: 12px;
+      border-top: 1px solid #f0f4ff;
+      margin-top: 4px;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-left">
+        <div class="logo">H</div>
+        <span class="title">HonEx</span>
+      </div>
+      <span class="status-badge" id="statusBadge">Active</span>
+    </div>
+
+    <div class="section">
+      <div class="status-row">
+        <div class="status-dot" id="statusDot"></div>
+        <span class="status-text" id="statusText">Protection Active</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Protection</div>
+      <div class="toggle-row">
+        <span class="toggle-label">Enable Protection</span>
+        <div class="toggle active" id="toggleProtection"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Settings</div>
+      <div class="menu-item" id="menuSettings">
+        <div class="menu-icon">&#9881;</div>
+        <span class="menu-text">Settings</span>
+        <span class="menu-arrow">&#8594;</span>
+      </div>
+      <div class="menu-item" id="menuAbout">
+        <div class="menu-icon">&#9432;</div>
+        <span class="menu-text">About</span>
+        <span class="menu-arrow">&#8594;</span>
+      </div>
+    </div>
+
+    <div class="model-info" id="modelInfo">Model: loading...</div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

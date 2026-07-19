@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HonEx Settings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #f8f9ff;
+      color: #0b1c30;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 24px;
+    }
+    .container {
+      max-width: 560px;
+      width: 100%;
+    }
+    h1 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    h1 span { color: #2563eb; }
+    .section {
+      background: #fff;
+      border: 1px solid #e5eeff;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #737686;
+      margin-bottom: 16px;
+    }
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+    }
+    .setting-row + .setting-row {
+      border-top: 1px solid #f0f4ff;
+    }
+    .setting-label {
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .setting-desc {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 2px;
+    }
+    .toggle {
+      width: 40px;
+      height: 22px;
+      background: #cbdbf5;
+      border-radius: 11px;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .toggle.active { background: #2563eb; }
+    .toggle::after {
+      content: '';
+      position: absolute;
+      top: 2px; left: 2px;
+      width: 18px; height: 18px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+    .toggle.active::after { transform: translateX(18px); }
+    select {
+      font-family: inherit;
+      font-size: 13px;
+      padding: 6px 10px;
+      border: 1px solid #d3e4fe;
+      border-radius: 8px;
+      background: #f8f9ff;
+      color: #0b1c30;
+      cursor: pointer;
+      min-width: 120px;
+    }
+    select:focus {
+      outline: none;
+      border-color: #2563eb;
+    }
+    .status-msg {
+      font-size: 12px;
+      color: #166534;
+      background: #dcfce7;
+      padding: 8px 12px;
+      border-radius: 8px;
+      margin-top: 16px;
+      display: none;
+    }
+    .footer {
+      text-align: center;
+      font-size: 11px;
+      color: #9ca3af;
+      padding: 16px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1><span>&#9881;</span> Settings</h1>
+
+    <div class="section">
+      <div class="section-title">Protection</div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Enable Protection</div>
+          <div class="setting-desc">Analyze URLs and block phishing threats</div>
+        </div>
+        <div class="toggle active" id="toggleProtection"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Appearance</div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Theme</div>
+          <div class="setting-desc">Choose light or dark mode</div>
+        </div>
+        <select id="selectTheme">
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Notifications</div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Phishing Alerts</div>
+          <div class="setting-desc">Show a notification when phishing is detected</div>
+        </div>
+        <div class="toggle active" id="toggleNotifications"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Warning Mode</div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Action on Threat</div>
+          <div class="setting-desc">How HonEx responds when phishing is detected</div>
+        </div>
+        <select id="selectWarningMode">
+          <option value="block">Block (Show Warning)</option>
+          <option value="warn">Warn Only</option>
+          <option value="log">Log Only</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="status-msg" id="statusMsg">Settings saved</div>
+
+    <div class="footer">HonEx - AI Phishing Protection v1.0.0</div>
+  </div>
+
+  <script src="settings.js"></script>
+</body>
+</html>
