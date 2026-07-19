@@ -71,32 +71,32 @@ HonEx/
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                      CHROME BROWSER                              │
+│                      CHROME BROWSER                             │
 │                                                                 │
 │  ┌──────────┐   webNavigation    ┌──────────────────────────┐   │
-│  │  User    │ ──────────────────▸│  Background Worker        │   │
-│  │  clicks  │                    │  (service_worker.js)      │   │
-│  │  link    │                    │                           │   │
-│  └──────────┘                    │  ┌─────────────────────┐  │   │
-│                                  │  │ Navigation Handler  │  │   │
-│       ┌──────────────────┐       │  │                     │  │   │
-│       │  Warning Page    │◂──────│  │ analyzeUrl()        │  │   │
-│       │  (redirect if    │       │  │ bypass check        │  │   │
-│       │   phishing)      │       │  │ redirectToWarning() │  │   │
-│       └──────────────────┘       │  └─────────┬───────────┘  │   │
-│                                  │            │               │   │
-│  ┌──────────────────┐            │            ▼               │   │
-│  │  Popup UI        │◂───msg───│  ┌─────────────────────┐  │   │
-│  │  (toggle status) │           │  │  Feature Extractor  │  │   │
-│  └──────────────────┘           │  │  + Predictor        │  │   │
-│                                  │  │  + Calibration     │  │   │
-│  ┌──────────────────┐            │  └─────────────────────┘  │   │
-│  │  Dashboard       │◂───msg───│                           │   │
-│  │  (status/health) │           │  Redirect Tracking:       │   │
-│  └──────────────────┘           │  onBeforeRedirect         │   │
-│                                  │  → domainRedirectHistory  │   │
-│  ┌──────────────────┐            │  Bypass:                  │   │
-│  │  Settings        │  chrome.   │  bypassedUrls Set (30s)   │   │
+│  │  User    │ ──────────────────▸│  Background Worker       │   │
+│  │  clicks  │                    │  (service_worker.js)     │   │
+│  │  link    │                    │                          │   │
+│  └──────────┘                    │  ┌─────────────────────┐ │   │ 
+│                                  │  │ Navigation Handler  │ │   │
+│       ┌──────────────────┐       │  │                     │ │   │
+│       │  Warning Page    │◂──────│  │ analyzeUrl()        │ │   │
+│       │  (redirect if    │       │  │ bypass check        │ │   │
+│       │   phishing)      │       │  │ redirectToWarning() │ │   │
+│       └──────────────────┘       │  └─────────┬───────────┘ │   │
+│                                  │            │             │   │
+│  ┌──────────────────┐            │            ▼             │   │
+│  │  Popup UI        │◂───msg─────│  ┌─────────────────────┐ │   │
+│  │  (toggle status) │            │  │  Feature Extractor  │ │   │
+│  └──────────────────┘            │  │  + Predictor        │ │   │
+│                                  │  │  + Calibration      │ │   │
+│  ┌──────────────────┐            │  └─────────────────────┘ │   │
+│  │  Dashboard       │◂───msg─────│                          │   │
+│  │  (status/health) │            │  Redirect Tracking:      │   │
+│  └──────────────────┘            │  onBeforeRedirect        │   │
+│                                  │  → domainRedirectHistory │   │
+│  ┌──────────────────┐            │  Bypass:                 │   │
+│  │  Settings        │  chrome.   │  bypassedUrls Set (30s)  │   │
 │  │  (persistent)    │  storage   └──────────────────────────┘   │
 │  └──────────────────┘  .sync                                    │
 └─────────────────────────────────────────────────────────────────┘
@@ -165,26 +165,3 @@ Detailed instructions in [`INSTALLATION.md`](INSTALLATION.md).
 | Warning page loops                                      | Fixed in v1.0.0 — bypass mechanism active  |
 | Protection not working                                  | Check toggle in popup or settings          |
 | See [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) for more |
-
----
-
-## Future Improvements
-
-- [ ] Model quantization / pruning to reduce 23 MB footprint
-- [ ] Content script for DOM-level phishing form detection
-- [ ] Local statistics dashboard (blocked sites, safe visits)
-- [ ] Threshold sensitivity slider in settings
-- [ ] DNSSEC / MX record lookup when browser APIs allow
-- [ ] WebAssembly-accelerated inference for even faster prediction
-
----
-
-## License
-
-This project is provided for educational and portfolio purposes.
-
----
-
-## Author
-
-**Aldi Nova** — Machine Learning & Browser Extension Developer
