@@ -6,10 +6,10 @@ This guide walks you through installing HonEx in Google Chrome step by step. No 
 
 ## Prerequisites
 
-| Requirement | Minimum Version |
-|---|---|
-| Google Chrome | 88+ (Manifest V3 support) |
-| Node.js | Not required (optional for running tests) |
+| Requirement   | Minimum Version                           |
+| ------------- | ----------------------------------------- |
+| Google Chrome | 88+ (Manifest V3 support)                 |
+| Node.js       | Not required (optional for running tests) |
 
 No npm packages, no build step, no compilers.
 
@@ -21,11 +21,11 @@ Clone the repository or download it as a ZIP:
 
 ```bash
 # Option A — Clone with Git
-git clone https://github.com/your-username/HonEx.git
+git clone https://github.com/hafourenai/HonEx.git
 cd HonEx
 
 # Option B — Download ZIP
-# https://github.com/your-username/HonEx/archive/refs/heads/main.zip
+# https://github.com/hafourenai/HonEx/archive/refs/heads/main.zip
 # Extract to a folder on your computer
 ```
 
@@ -42,6 +42,7 @@ chrome://extensions
 ```
 
 You can also access this via:
+
 1. Click the three-dot menu (⋮) in the top-right corner
 2. Go to **Extensions** → **Manage Extensions**
 
@@ -184,6 +185,7 @@ node test_features.mjs
 ```
 
 These tests validate:
+
 - Model loading and validation
 - Feature extraction with real URLs
 - End-to-end prediction accuracy
@@ -193,14 +195,14 @@ These tests validate:
 
 ## Troubleshooting Installation
 
-| Problem | Solution |
-|---|---|
-| **"Manifest is not valid JSON"** | Open `src/manifest.json` and check for syntax errors (missing commas, trailing commas) |
-| **"Permission 'webNavigation' is unknown or URL pattern is malformed"** | Verify you're using Chrome 88+ (MV3 requirement) |
-| **Extension loads but model won't load** | Check `src/ml/rf_trees.json` exists (≈ 23 MB). If missing, copy from `trash/hasil/rf_trees.json` |
-| **"Failed to load extension" with no details** | Open Chrome DevTools → Console for the extensions page to see detailed errors |
-| **Icon not showing in toolbar** | Click the puzzle piece icon → Find HonEx → Click the pin icon |
-| See [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) for more |
+| Problem                                                                 | Solution                                                                                         |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| **"Manifest is not valid JSON"**                                        | Open `src/manifest.json` and check for syntax errors (missing commas, trailing commas)           |
+| **"Permission 'webNavigation' is unknown or URL pattern is malformed"** | Verify you're using Chrome 88+ (MV3 requirement)                                                 |
+| **Extension loads but model won't load**                                | Check `src/ml/rf_trees.json` exists (≈ 23 MB). If missing, copy from `trash/hasil/rf_trees.json` |
+| **"Failed to load extension" with no details**                          | Open Chrome DevTools → Console for the extensions page to see detailed errors                    |
+| **Icon not showing in toolbar**                                         | Click the puzzle piece icon → Find HonEx → Click the pin icon                                    |
+| See [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) for more                 |
 
 ---
 

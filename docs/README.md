@@ -17,31 +17,31 @@ HonEx addresses both problems:
 
 ## Features
 
-| Feature | Description |
-|---|---|
-| **On-device ML** | 100-tree Random Forest runs entirely in the browser via pure JavaScript |
-| **Real-time interception** | `webNavigation` API blocks phishing pages before they load |
-| **33 URL features** | Extracts character counts, domain metrics, structural patterns, and anomaly signals |
-| **95.16% accuracy** | Trained on real-world phishing datasets with 93.12% precision and 93.02% recall |
-| **Privacy-first** | No network requests, no telemetry, no third-party APIs |
-| **Dashboard** | Live protection status, model health, and toggle controls |
-| **Settings** | Persistent configuration via `chrome.storage.sync` |
-| **Warning page** | Clear threat display with confidence score, Go Back, and Continue Anyway |
+| Feature                    | Description                                                                         |
+| -------------------------- | ----------------------------------------------------------------------------------- |
+| **On-device ML**           | 100-tree Random Forest runs entirely in the browser via pure JavaScript             |
+| **Real-time interception** | `webNavigation` API blocks phishing pages before they load                          |
+| **33 URL features**        | Extracts character counts, domain metrics, structural patterns, and anomaly signals |
+| **95.16% accuracy**        | Trained on real-world phishing datasets with 93.12% precision and 93.02% recall     |
+| **Privacy-first**          | No network requests, no telemetry, no third-party APIs                              |
+| **Dashboard**              | Live protection status, model health, and toggle controls                           |
+| **Settings**               | Persistent configuration via `chrome.storage.sync`                                  |
+| **Warning page**           | Clear threat display with confidence score, Go Back, and Continue Anyway            |
 
 ---
 
 ## Technologies Used
 
-| Layer | Technology |
-|---|---|
-| Extension Framework | Chrome Manifest V3 |
-| ML Model | scikit-learn RandomForestClassifier (100 estimators) |
-| Inference Engine | Pure JavaScript (zero dependencies) |
-| Feature Extraction | Native `URL` API + custom parsers |
-| Storage | `chrome.storage.sync` |
-| UI | Vanilla HTML/CSS/JS |
-| Training | Python 3, pandas, numpy, scikit-learn, Jupyter |
-| Model Export | Custom JSON serialization of scikit-learn tree structures |
+| Layer               | Technology                                                |
+| ------------------- | --------------------------------------------------------- |
+| Extension Framework | Chrome Manifest V3                                        |
+| ML Model            | scikit-learn RandomForestClassifier (100 estimators)      |
+| Inference Engine    | Pure JavaScript (zero dependencies)                       |
+| Feature Extraction  | Native `URL` API + custom parsers                         |
+| Storage             | `chrome.storage.sync`                                     |
+| UI                  | Vanilla HTML/CSS/JS                                       |
+| Training            | Python 3, pandas, numpy, scikit-learn, Jupyter            |
+| Model Export        | Custom JSON serialization of scikit-learn tree structures |
 
 ---
 
@@ -121,7 +121,7 @@ HonEx/
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/HonEx.git
+git clone https://github.com/hafourenai/HonEx.git
 cd HonEx
 
 # Load into Chrome
@@ -139,28 +139,28 @@ Detailed instructions in [`INSTALLATION.md`](INSTALLATION.md).
 
 ## Performance
 
-| Metric | Value |
-|---|---|
-| Model Accuracy | 95.16% |
-| Precision | 93.12% |
-| Recall | 93.02% |
-| F1 Score | 93.07% |
-| ROC-AUC | 0.9876 |
-| Features | 33 |
-| Decision Trees | 100 |
-| Inference Time | < 5ms (typical) |
-| Model Size | ≈ 23 MB (uncompressed JSON) |
+| Metric         | Value                       |
+| -------------- | --------------------------- |
+| Model Accuracy | 95.16%                      |
+| Precision      | 93.12%                      |
+| Recall         | 93.02%                      |
+| F1 Score       | 93.07%                      |
+| ROC-AUC        | 0.9876                      |
+| Features       | 33                          |
+| Decision Trees | 100                         |
+| Inference Time | < 5ms (typical)             |
+| Model Size     | ≈ 23 MB (uncompressed JSON) |
 
 ---
 
 ## Troubleshooting
 
-| Problem | Solution |
-|---|---|
-| Extension won't load | Verify Chrome version ≥ 88 (MV3 support) |
-| Model not loading | Check that `rf_trees.json` is in `src/ml/` |
-| Warning page loops | Fixed in v1.0.0 — bypass mechanism active |
-| Protection not working | Check toggle in popup or settings |
+| Problem                                                 | Solution                                   |
+| ------------------------------------------------------- | ------------------------------------------ |
+| Extension won't load                                    | Verify Chrome version ≥ 88 (MV3 support)   |
+| Model not loading                                       | Check that `rf_trees.json` is in `src/ml/` |
+| Warning page loops                                      | Fixed in v1.0.0 — bypass mechanism active  |
+| Protection not working                                  | Check toggle in popup or settings          |
 | See [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) for more |
 
 ---
