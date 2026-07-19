@@ -39,6 +39,9 @@ export async function getThreshold() {
 }
 
 export async function setThreshold(threshold) {
+  if (typeof threshold !== 'number' || threshold < 0 || threshold > 1) {
+    throw new Error('Threshold harus berupa angka antara 0.0 dan 1.0');
+  }
   return set(STORAGE_KEYS.THRESHOLD, threshold);
 }
 

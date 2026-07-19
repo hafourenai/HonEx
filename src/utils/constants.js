@@ -13,11 +13,11 @@ export const STORAGE_KEYS = Object.freeze({
 });
 
 export const DEFAULTS = Object.freeze({
-  PROTECTION_ENABLED: true,
-  THEME: 'light',
-  NOTIFICATIONS_ENABLED: true,
-  THRESHOLD: 0.5,
-  WARNING_MODE: 'block'
+  [STORAGE_KEYS.PROTECTION_ENABLED]: true,
+  [STORAGE_KEYS.THEME]: 'light',
+  [STORAGE_KEYS.NOTIFICATIONS_ENABLED]: true,
+  [STORAGE_KEYS.THRESHOLD]: 0.5,
+  [STORAGE_KEYS.WARNING_MODE]: 'block'
 });
 
 export const WARNING_MODES = Object.freeze({
