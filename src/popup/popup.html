@@ -32,14 +32,7 @@
     .logo {
       width: 28px;
       height: 28px;
-      background: #2563eb;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      font-size: 14px;
-      font-weight: 700;
+      border-radius: 6px;
     }
     .title {
       font-size: 16px;
@@ -173,13 +166,50 @@
     .hidden {
       display: none;
     }
+
+    body.dark {
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+    body.dark .section {
+      background: #1e293b;
+      border-color: #334155;
+    }
+    body.dark .section-title {
+      color: #94a3b8;
+    }
+    body.dark .title {
+      color: #f1f5f9;
+    }
+    body.dark .status-text {
+      color: #cbd5e1;
+    }
+    body.dark .menu-item {
+      border-color: #334155;
+    }
+    body.dark .menu-icon {
+      background: #334155;
+    }
+    body.dark .menu-arrow {
+      color: #64748b;
+    }
+    body.dark .model-info {
+      color: #64748b;
+      border-color: #334155;
+    }
+    body.dark .toggle {
+      background: #475569;
+    }
+    body.dark .toggle.active {
+      background: #3b82f6;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
       <div class="header-left">
-        <div class="logo">H</div>
+        <img class="logo" src="../assets/Logo.png" alt="HonEx" />
         <span class="title">HonEx</span>
       </div>
       <span class="status-badge" id="statusBadge">Active</span>

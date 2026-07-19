@@ -122,7 +122,7 @@ The `extractFeatures()` function orchestrates the entire pipeline:
 2. Extract domain features
 3. Compute length features (`directory_length`, `domain_length`, `file_length`, `length_url`, `params_length`)
 4. Count special characters in each component
-5. Handle external features (`qty_mx_servers`, `qty_redirects` — default to 0 with warning)
+5. Handle external features (`qty_mx_servers` default 2, `qty_redirects` default 1 — di-override jika data tersedia)
 6. Order all 33 values according to `FEATURE_ORDER`
 
 The feature order is `Object.freeze()`'d and hardcoded to match `feature_order.json` from training.
@@ -170,15 +170,15 @@ Two features cannot be computed in-browser:
 
 | Feature | External Data Needed | In-Browser Value |
 |---|---|---|
-| `qty_mx_servers` | DNS MX record lookup | `0` (default) |
-| `qty_redirects` | HTTP redirect chain tracking | `0` (default) |
+| `qty_mx_servers` | DNS MX record lookup | `2` (default, tidak tersedia di browser) |
 
-These default to `0` with a warning logged. If you implement DNS lookup or redirect tracking, pass overrides:
+| `qty_redirects` | HTTP redirect chain tracking | `1` (default, di-track via `webNavigation`) |
+These default to `2` (qty_mx_servers) and `1` (qty_redirects). Redirect counts are tracked in real-time via `webNavigation.onBeforeRedirect`; overrides can be passed explicitly:
 
 ```javascript
 const result = extractFeatures(url, {
-  qty_redirects: 2,
-  qty_mx_servers: 1
+  qty_redirects: 3,
+  qty_mx_servers: 5
 });
 ```
 

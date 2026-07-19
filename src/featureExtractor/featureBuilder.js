@@ -40,12 +40,12 @@ const FEATURE_ORDER = Object.freeze([
 
 const EXTERNAL_FEATURES = Object.freeze({
   qty_mx_servers: {
-    defaultValue: 0,
-    reason: 'Memerlukan DNS MX record lookup — tidak tersedia di browser'
+    defaultValue: 2,
+    reason: 'DNS MX record lookup tidak tersedia di browser. Default 2 (mayoritas situs legitimate punya 1-5 MX records).'
   },
   qty_redirects: {
-    defaultValue: 0,
-    reason: 'Memerlukan HTTP request tracking — bisa di-update via chrome.webNavigation API'
+    defaultValue: 1,
+    reason: 'HTTP request tracking via chrome.webNavigation API. Default 1 (kebanyakan situs punya redirect HTTP→HTTPS).'
   }
 });
 

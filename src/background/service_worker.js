@@ -7,7 +7,56 @@ import {
   setThreshold
 } from '../utils/storage.js';
 
-chrome.webNavigation.onBeforeNavigate.addListener(handleNavigation);
+const redirectCounts = new Map();
+const domainRedirectHistory = new Map();
+const bypassedUrls = new Set();
+
+function safeAddListener(name, event, callback) {
+  if (event && typeof event.addListener === 'function') {
+    event.addListener(callback);
+    console.log('[HonEx] Listener registered:', name);
+  } else {
+    console.warn('[HonEx] Listener NOT available:', name);
+  }
+}
+
+safeAddListener('onBeforeRedirect', chrome.webNavigation.onBeforeRedirect, (details) => {
+  try {
+    if (details.frameId !== 0) return;
+    redirectCounts.set(details.tabId, (redirectCounts.get(details.tabId) || 0) + 1);
+  } catch (err) {
+    console.error('[HonEx] onBeforeRedirect callback error:', err, details);
+  }
+});
+
+safeAddListener('onCompleted', chrome.webNavigation.onCompleted, (details) => {
+  try {
+    if (details.frameId !== 0) return;
+    const count = redirectCounts.get(details.tabId) || 0;
+    if (count > 0) {
+      const domain = new URL(details.url).hostname;
+      domainRedirectHistory.set(domain, count);
+    }
+  } catch (err) {
+    console.error('[HonEx] onCompleted callback error:', err, details);
+  } finally {
+    try { redirectCounts.delete(details.tabId); } catch {}
+  }
+});
+
+safeAddListener('onErrorOccurred', chrome.webNavigation.onErrorOccurred, (details) => {
+  try {
+    if (details.frameId !== 0) return;
+    redirectCounts.delete(details.tabId);
+  } catch (err) {
+    console.error('[HonEx] onErrorOccurred callback error:', err, details);
+  }
+});
+
+safeAddListener('onCommitted', chrome.webNavigation.onCommitted, (details) => {
+  if (details.frameId !== 0) return;
+  handleNavigation(details, bypassedUrls, domainRedirectHistory);
+});
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   switch (request.type) {
@@ -44,8 +93,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       return false;
   }
 });
-
-const bypassedUrls = new Set();
 
 async function handleCheckUrl(request, sender, sendResponse) {
   try {
@@ -120,8 +167,24 @@ async function handleGoBack(sender, sendResponse) {
   }
 }
 
-chrome.runtime.onInstalled.addListener(async () => {
+chrome.runtime.onInstalled.addListener(async (details) => {
   console.log('[HonEx] Extension installed. Pre-loading model...');
+
+  if (details.reason === 'update') {
+    const oldVersion = details.previousVersion;
+    console.log(`[HonEx] Upgraded from v${oldVersion}. Migrating storage...`);
+    try {
+      const all = await chrome.storage.sync.get(null);
+      if (Object.keys(all).length > 0) {
+        const oldThreshold = all.threshold;
+        if (oldThreshold !== undefined && oldThreshold < 0.85) {
+          await chrome.storage.sync.set({ threshold: 0.85 });
+          console.log('[HonEx] Threshold migrated from', oldThreshold, 'to 0.85');
+        }
+      }
+    } catch {}
+  }
+
   try {
     await getPredictor();
     console.log('[HonEx] Model loaded successfully');

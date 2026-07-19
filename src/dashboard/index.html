@@ -1,171 +1,310 @@
-<!DOCTYPE html>
+<!doctype html>
 <html class="light" lang="en">
-<head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>HonEx Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
-<link href="tailwind.css" rel="stylesheet"/>
-<style>
-  body { font-family: 'Inter', system-ui, sans-serif; }
-  .flow-line {
-    position: absolute; left: 11px; top: 24px; bottom: -8px;
-    width: 2px; background: #dbe1ff;
-  }
-</style>
-</head>
-<body class="bg-background text-on-surface min-h-screen">
-<header class="sticky top-0 z-40 bg-surface/95 border-b border-outline-variant/10 px-4 md:px-8 h-14 flex items-center justify-between">
-  <div class="flex items-center gap-3">
-    <img alt="HonEx" class="w-7 h-7 md:w-8 md:h-8" src="../assets/Logo.png"/>
-    <span class="font-bold text-base text-primary">HonEx</span>
-    <span class="hidden md:inline text-[10px] text-on-surface-variant font-medium ml-1">AI Phishing Protection</span>
-  </div>
-  <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-on-surface-variant">
-    <a class="text-primary" href="#">Dashboard</a>
-    <a class="hover:text-primary transition-colors" href="#how-it-works">How It Works</a>
-    <a class="hover:text-primary transition-colors" href="#about">About</a>
-  </nav>
-  <div class="flex items-center gap-2">
-    <div class="flex items-center gap-1.5">
-      <div class="w-2 h-2 rounded" id="statusDot"></div>
-      <span class="text-xs text-on-surface-variant font-medium hidden sm:inline" id="statusText">Loading...</span>
-    </div>
-  </div>
-</header>
-
-<main class="px-4 md:px-8 py-6 max-w-6xl w-full mx-auto space-y-6 pb-24 md:pb-12">
-
-      <section class="bg-surface-container-lowest border border-outline-variant/20 rounded-xl p-6 relative overflow-hidden">
-        <div class="absolute -right-6 -top-6 opacity-5">
-          <span class="material-symbols-outlined text-[160px] text-primary">verified_user</span>
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>HonEx Dashboard</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link href="tailwind.css" rel="stylesheet" />
+    <style>
+      body {
+        font-family: "Inter", system-ui, sans-serif;
+      }
+      .flow-line {
+        position: absolute;
+        left: 11px;
+        top: 24px;
+        bottom: -8px;
+        width: 2px;
+        background: #dbe1ff;
+      }
+    </style>
+  </head>
+  <body class="bg-background text-on-surface min-h-screen">
+    <header
+      class="sticky top-0 z-40 bg-surface/95 border-b border-outline-variant/10 px-4 md:px-8 h-14 flex items-center justify-between"
+    >
+      <div class="flex items-center gap-3">
+        <img
+          alt="HonEx"
+          class="w-7 h-7 md:w-8 md:h-8"
+          src="../assets/Logo.png"
+        />
+        <span class="font-bold text-base text-primary">HonEx</span>
+        <span
+          class="hidden md:inline text-[10px] text-on-surface-variant font-medium ml-1"
+          >Phishing Protection</span
+        >
+      </div>
+      <nav
+        class="hidden md:flex items-center gap-6 text-sm font-medium text-on-surface-variant"
+      >
+        <a class="text-primary" href="#">Dashboard</a>
+        <a class="hover:text-primary transition-colors" href="#how-it-works"
+          >How It Works</a
+        >
+        <a class="hover:text-primary transition-colors" href="#about">About</a>
+      </nav>
+      <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5">
+          <div class="w-2 h-2 rounded" id="statusDot"></div>
+          <span
+            class="text-xs text-on-surface-variant font-medium hidden sm:inline"
+            id="statusText"
+            >Loading...</span
+          >
         </div>
-        <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      </div>
+    </header>
+
+    <main
+      class="px-4 md:px-8 py-6 max-w-6xl w-full mx-auto space-y-6 pb-24 md:pb-12"
+    >
+      <section
+        class="bg-surface-container-lowest border border-outline-variant/20 rounded-xl p-6 relative overflow-hidden"
+      >
+        <div
+          class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+        >
           <div>
-            <div class="inline-flex items-center gap-2 bg-primary-container/10 text-primary text-xs font-bold px-3 py-1.5 rounded-lg mb-3">
+            <div
+              class="inline-flex items-center gap-2 bg-primary-container/10 text-primary text-xs font-bold px-3 py-1.5 rounded-lg mb-3"
+            >
               <span class="w-2 h-2 rounded bg-primary"></span>
               <span id="protectionBadge">Protection Active</span>
             </div>
-            <h2 class="text-xl md:text-2xl font-bold text-on-surface" id="heroTitle">All secure</h2>
-            <p class="text-sm text-on-surface-variant mt-1" id="heroDesc">HonEx is analyzing every URL you visit.</p>
+            <h2
+              class="text-xl md:text-2xl font-bold text-on-surface"
+              id="heroTitle"
+            >
+              All secure
+            </h2>
+            <p class="text-sm text-on-surface-variant mt-1" id="heroDesc">
+              HonEx is analyzing every URL you visit.
+            </p>
           </div>
-          <label class="relative inline-flex items-center cursor-pointer shrink-0">
-            <input id="toggleProtection" class="sr-only peer" type="checkbox"/>
-            <div class="w-11 h-6 bg-secondary-container peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+          <label
+            class="relative inline-flex items-center cursor-pointer shrink-0"
+          >
+            <input id="toggleProtection" class="sr-only peer" type="checkbox" />
+            <div
+              class="w-11 h-6 bg-secondary-container peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"
+            ></div>
           </label>
         </div>
       </section>
 
       <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-surface-container-low p-4 rounded-xl border border-outline-variant/10">
-          <span class="material-symbols-outlined text-primary text-[20px]">memory</span>
+        <div
+          class="bg-surface-container-low p-4 rounded-xl border border-outline-variant/10"
+        >
+          <span class="material-symbols-outlined text-primary text-[20px]"
+            >memory</span
+          >
           <h3 class="text-sm font-bold text-on-surface mt-2">Model</h3>
-          <p class="text-xs text-on-surface-variant mt-0.5" id="modelStatus">Random Forest classifier</p>
+          <p class="text-xs text-on-surface-variant mt-0.5" id="modelStatus">
+            Random Forest classifier
+          </p>
         </div>
-        <div class="bg-surface-container-low p-4 rounded-xl border border-outline-variant/10">
-          <span class="material-symbols-outlined text-primary text-[20px]">bolt</span>
+        <div
+          class="bg-surface-container-low p-4 rounded-xl border border-outline-variant/10"
+        >
+          <span class="material-symbols-outlined text-primary text-[20px]"
+            >bolt</span
+          >
           <h3 class="text-sm font-bold text-on-surface mt-2">Detection</h3>
-          <p class="text-xs text-on-surface-variant mt-0.5" id="detectionStatus">Analyzes URL structure, subdomains, and keywords.</p>
+          <p
+            class="text-xs text-on-surface-variant mt-0.5"
+            id="detectionStatus"
+          >
+            Analyzes URL structure, subdomains, and keywords.
+          </p>
         </div>
-        <div class="bg-surface-container-low p-4 rounded-xl border border-outline-variant/10">
-          <span class="material-symbols-outlined text-primary text-[20px]">terminal</span>
+        <div
+          class="bg-surface-container-low p-4 rounded-xl border border-outline-variant/10"
+        >
+          <span class="material-symbols-outlined text-primary text-[20px]"
+            >terminal</span
+          >
           <h3 class="text-sm font-bold text-on-surface mt-2">Execution</h3>
-          <p class="text-xs text-on-surface-variant mt-0.5">All processing happens locally in the browser.</p>
+          <p class="text-xs text-on-surface-variant mt-0.5">
+            All processing happens locally in the browser.
+          </p>
         </div>
-        <div class="bg-surface-container-low p-4 rounded-xl border border-outline-variant/10">
-          <span class="material-symbols-outlined text-primary text-[20px]">privacy_tip</span>
+        <div
+          class="bg-surface-container-low p-4 rounded-xl border border-outline-variant/10"
+        >
+          <span class="material-symbols-outlined text-primary text-[20px]"
+            >privacy_tip</span
+          >
           <h3 class="text-sm font-bold text-on-surface mt-2">Privacy</h3>
-          <p class="text-xs text-on-surface-variant mt-0.5">No data is sent to any server or third party.</p>
+          <p class="text-xs text-on-surface-variant mt-0.5">
+            No data is sent to any server or third party.
+          </p>
         </div>
       </section>
 
-      <section id="how-it-works" class="bg-surface-container-lowest border border-outline-variant/20 rounded-xl p-5 md:p-6">
+      <section
+        id="how-it-works"
+        class="bg-surface-container-lowest border border-outline-variant/20 rounded-xl p-5 md:p-6"
+      >
         <h3 class="font-bold text-lg text-on-surface mb-5">How It Works</h3>
         <div class="relative pl-2">
           <div class="space-y-6">
             <div class="flex gap-4 relative">
               <div class="flow-line"></div>
-              <div class="w-7 h-7 rounded-full bg-primary-container flex items-center justify-center shrink-0 z-10">
-                <span class="material-symbols-outlined text-white text-[14px]">ads_click</span>
+              <div
+                class="w-7 h-7 rounded-full bg-primary-container flex items-center justify-center shrink-0 z-10"
+              >
+                <span class="material-symbols-outlined text-white text-[14px]"
+                  >ads_click</span
+                >
               </div>
               <div class="min-w-0">
-                <p class="font-semibold text-sm text-on-surface">User clicks a link</p>
-                <p class="text-xs text-on-surface-variant mt-0.5">URL is intercepted before the page loads.</p>
+                <p class="font-semibold text-sm text-on-surface">
+                  User clicks a link
+                </p>
+                <p class="text-xs text-on-surface-variant mt-0.5">
+                  URL is intercepted before the page loads.
+                </p>
               </div>
             </div>
             <div class="flex gap-4 relative">
               <div class="flow-line"></div>
-              <div class="w-7 h-7 rounded-full bg-primary-container flex items-center justify-center shrink-0 z-10">
-                <span class="material-symbols-outlined text-white text-[14px]">account_tree</span>
+              <div
+                class="w-7 h-7 rounded-full bg-primary-container flex items-center justify-center shrink-0 z-10"
+              >
+                <span class="material-symbols-outlined text-white text-[14px]"
+                  >account_tree</span
+                >
               </div>
               <div class="min-w-0">
-                <p class="font-semibold text-sm text-on-surface">Feature extraction</p>
-                <p class="text-xs text-on-surface-variant mt-0.5">URL structure, subdomains, and keywords are analyzed.</p>
+                <p class="font-semibold text-sm text-on-surface">
+                  Feature extraction
+                </p>
+                <p class="text-xs text-on-surface-variant mt-0.5">
+                  URL structure, subdomains, and keywords are analyzed.
+                </p>
               </div>
             </div>
             <div class="flex gap-4 relative">
               <div class="flow-line"></div>
-              <div class="w-7 h-7 rounded-full bg-primary-container flex items-center justify-center shrink-0 z-10">
-                <span class="material-symbols-outlined text-white text-[14px]">psychology</span>
+              <div
+                class="w-7 h-7 rounded-full bg-primary-container flex items-center justify-center shrink-0 z-10"
+              >
+                <span class="material-symbols-outlined text-white text-[14px]"
+                  >psychology</span
+                >
               </div>
               <div class="min-w-0">
-                <p class="font-semibold text-sm text-on-surface"> Classification</p>
-                <p class="text-xs text-on-surface-variant mt-0.5">A Random Forest model scores the threat level.</p>
+                <p class="font-semibold text-sm text-on-surface">
+                  Classification
+                </p>
+                <p class="text-xs text-on-surface-variant mt-0.5">
+                  A Random Forest model scores the threat level.
+                </p>
               </div>
             </div>
             <div class="flex gap-4">
-              <div class="w-7 h-7 rounded-full bg-primary flex items-center justify-center shrink-0 z-10">
-                <span class="material-symbols-outlined text-white text-[14px]">check_circle</span>
+              <div
+                class="w-7 h-7 rounded-full bg-primary flex items-center justify-center shrink-0 z-10"
+              >
+                <span class="material-symbols-outlined text-white text-[14px]"
+                  >check_circle</span
+                >
               </div>
               <div class="min-w-0">
                 <p class="font-semibold text-sm text-on-surface">Verdict</p>
-                <p class="text-xs text-on-surface-variant mt-0.5">Safe websites proceed; phishing sites are blocked.</p>
+                <p class="text-xs text-on-surface-variant mt-0.5">
+                  Safe websites proceed; phishing sites are blocked.
+                </p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section id="about" class="bg-surface-container-lowest border border-outline-variant/20 rounded-xl p-6 md:p-8">
-        <div class="flex flex-col items-center gap-5 max-w-lg mx-auto text-center">
-          <img alt="Aldi Nova" class="w-24 h-24 md:w-28 md:h-28 rounded-full object-cover border-2 border-primary/20 shadow-sm" src="../assets/Foto.png"/>
+      <section
+        id="about"
+        class="bg-surface-container-lowest border border-outline-variant/20 rounded-xl p-6 md:p-8"
+      >
+        <div
+          class="flex flex-col items-center gap-5 max-w-lg mx-auto text-center"
+        >
+          <img
+            alt="Aldi Nova"
+            class="w-24 h-24 md:w-28 md:h-28 rounded-full object-cover border-2 border-primary/20 shadow-sm"
+            src="../assets/Foto.png"
+          />
           <div>
-            <h3 class="font-bold text-lg text-on-surface">About the Developer</h3>
+            <h3 class="font-bold text-lg text-on-surface">
+              About the Developer
+            </h3>
             <p class="text-sm text-on-surface-variant mt-3 leading-relaxed">
-              Hi, I'm Aldi Nova. I build this phishing detection extension as a portfolio project
-              to demonstrate machine learning integration in browser extensions. The Random Forest
-              model was trained on phishing URL datasets and runs entirely client-side —
-              no data ever leaves your device.
+              Hi, I'm <strong>Aldi Nova</strong>. I created this phishing
+              detection extension as both a
+              <strong>portfolio project</strong> and a
+              <strong>learning resource</strong> to explore how machine learning
+              can be integrated into browser extensions. The Random Forest model
+              was trained on phishing URL datasets and runs entirely
+              client-side, meaning your browsing data never leaves your device.
             </p>
+
             <p class="text-sm text-on-surface-variant mt-3 leading-relaxed">
-              This project showcases full-stack AI development: from dataset preparation and
-              model training in Python, to deployment as a Chrome extension with real-time
-              classification in JavaScript.
+              This project represents my end-to-end learning journey—from
+              dataset preparation, feature engineering, and model training in
+              Python to deployment as a Chrome extension with real-time
+              classification in JavaScript. It demonstrates the practical
+              application of AI in solving real-world cybersecurity challenges
+              while continuously improving my skills in machine learning, web
+              development, and software engineering.
             </p>
-            <p class="text-xs text-on-surface-variant mt-4" id="versionInfo">Version 1.0.0</p>
+            <p
+              class="text-[10px] text-on-surface-variant/60 mt-4 text-center"
+              id="versionInfo"
+            >
+              Version 1.0.0
+            </p>
           </div>
         </div>
       </section>
+    </main>
 
-</main>
+    <nav
+      class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface-container-lowest border-t border-outline-variant/10 flex justify-around py-2"
+    >
+      <a class="flex flex-col items-center text-primary" href="#">
+        <span
+          class="material-symbols-outlined"
+          style="font-variation-settings: &quot;FILL&quot; 1"
+          >shield</span
+        >
+        <span class="text-[10px] font-medium mt-0.5">Dashboard</span>
+      </a>
+      <a
+        class="flex flex-col items-center text-on-surface-variant"
+        href="#how-it-works"
+      >
+        <span class="material-symbols-outlined">account_tree</span>
+        <span class="text-[10px] font-medium mt-0.5">Workflow</span>
+      </a>
+      <a
+        class="flex flex-col items-center text-on-surface-variant"
+        href="#about"
+      >
+        <span class="material-symbols-outlined">info</span>
+        <span class="text-[10px] font-medium mt-0.5">About</span>
+      </a>
+    </nav>
+    <div class="md:hidden h-16"></div>
 
-<nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface-container-lowest border-t border-outline-variant/10 flex justify-around py-2">
-  <a class="flex flex-col items-center text-primary" href="#">
-    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">shield</span>
-    <span class="text-[10px] font-medium mt-0.5">Dashboard</span>
-  </a>
-  <a class="flex flex-col items-center text-on-surface-variant" href="#how-it-works">
-    <span class="material-symbols-outlined">account_tree</span>
-    <span class="text-[10px] font-medium mt-0.5">Workflow</span>
-  </a>
-  <a class="flex flex-col items-center text-on-surface-variant" href="#about">
-    <span class="material-symbols-outlined">info</span>
-    <span class="text-[10px] font-medium mt-0.5">About</span>
-  </a>
-</nav>
-<div class="md:hidden h-16"></div>
-
-<script src="dashboard.js"></script>
-</body>
+    <script src="dashboard.js"></script>
+  </body>
 </html>

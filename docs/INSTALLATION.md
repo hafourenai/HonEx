@@ -17,19 +17,20 @@ No npm packages, no build step, no compilers.
 
 ## Step 1: Download the Extension
 
-Clone the repository or download it as a ZIP:
+Download the latest release (recommended for users) or clone the repository (for developers):
 
 ```bash
-# Option A — Clone with Git
+# Option A — Download from Releases (recommended)
+# Go to: https://github.com/hafourenai/HonEx/releases
+# Download the latest Source code (zip) or HonEx.zip
+# Extract the src/ folder to a location on your computer
+
+# Option B — Clone with Git (for development/contribution)
 git clone https://github.com/hafourenai/HonEx.git
 cd HonEx
-
-# Option B — Download ZIP
-# https://github.com/hafourenai/HonEx/archive/refs/heads/main.zip
-# Extract to a folder on your computer
 ```
 
-> **Note**: If you downloaded the ZIP, remember to extract it first. The extension source code is in the `src/` folder.
+> **Note**: The extension source code is in the `src/` folder. If you downloaded from Releases, ensure the `src/` folder is extracted correctly.
 
 ---
 

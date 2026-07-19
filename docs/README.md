@@ -70,37 +70,36 @@ HonEx/
 ## System Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     CHROME BROWSER                           │
-│                                                             │
-│  ┌──────────┐   webNavigation    ┌──────────────────────┐   │
-│  │  User    │ ──────────────────▸│  Background Worker    │   │
-│  │ clicks   │                    │  (service_worker.js)  │   │
-│  │ link     │                    │                       │   │
-│  └──────────┘                    │  ┌─────────────────┐  │   │
-│                                  │  │ Navigation      │  │   │
-│                                  │  │ Handler         │  │   │
-│       ┌──────────────────┐       │  │                 │  │   │
-│       │  Warning Page    │◂──────│  │ analyzeUrl()    │  │   │
-│       │  (redirect if    │       │  │ redirectToWarn()│  │   │
-│       │   phishing)      │       │  └────────┬────────┘  │   │
-│       └──────────────────┘       │           │           │   │
-│                                  │           ▼           │   │
-│  ┌──────────────────┐            │  ┌─────────────────┐  │   │
-│  │  Popup UI        │◂───msg───│  │  Feature         │  │   │
-│  │  (toggle status) │           │  │  Extractor       │  │   │
-│  └──────────────────┘           │  └────────┬────────┘  │   │
-│                                  │           │           │   │
-│  ┌──────────────────┐            │           ▼           │   │
-│  │  Dashboard       │◂───msg───│  ┌─────────────────┐  │   │
-│  │  (status/health) │           │  │  Predictor      │  │   │
-│  └──────────────────┘           │  │  (Random Forest)│  │   │
-│                                  │  └─────────────────┘  │   │
-│  ┌──────────────────┐            └──────────────────────┘   │
-│  │  Settings        │  chrome.storage.sync                  │
-│  │  (persistent)    │◂══════════════════════════════════════│
-│  └──────────────────┘                                       │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                      CHROME BROWSER                              │
+│                                                                 │
+│  ┌──────────┐   webNavigation    ┌──────────────────────────┐   │
+│  │  User    │ ──────────────────▸│  Background Worker        │   │
+│  │  clicks  │                    │  (service_worker.js)      │   │
+│  │  link    │                    │                           │   │
+│  └──────────┘                    │  ┌─────────────────────┐  │   │
+│                                  │  │ Navigation Handler  │  │   │
+│       ┌──────────────────┐       │  │                     │  │   │
+│       │  Warning Page    │◂──────│  │ analyzeUrl()        │  │   │
+│       │  (redirect if    │       │  │ bypass check        │  │   │
+│       │   phishing)      │       │  │ redirectToWarning() │  │   │
+│       └──────────────────┘       │  └─────────┬───────────┘  │   │
+│                                  │            │               │   │
+│  ┌──────────────────┐            │            ▼               │   │
+│  │  Popup UI        │◂───msg───│  ┌─────────────────────┐  │   │
+│  │  (toggle status) │           │  │  Feature Extractor  │  │   │
+│  └──────────────────┘           │  │  + Predictor        │  │   │
+│                                  │  │  + Calibration     │  │   │
+│  ┌──────────────────┐            │  └─────────────────────┘  │   │
+│  │  Dashboard       │◂───msg───│                           │   │
+│  │  (status/health) │           │  Redirect Tracking:       │   │
+│  └──────────────────┘           │  onBeforeRedirect         │   │
+│                                  │  → domainRedirectHistory  │   │
+│  ┌──────────────────┐            │  Bypass:                  │   │
+│  │  Settings        │  chrome.   │  bypassedUrls Set (30s)   │   │
+│  │  (persistent)    │  storage   └──────────────────────────┘   │
+│  └──────────────────┘  .sync                                    │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -119,17 +118,21 @@ HonEx/
 
 ## Installation
 
+**For users** — Download the latest release from the [Releases page](https://github.com/hafourenai/HonEx/releases), extract the `src/` folder, and load it into Chrome.
+
+**For developers** — Clone the repository to modify or contribute:
+
 ```bash
-# Clone the repository
 git clone https://github.com/hafourenai/HonEx.git
 cd HonEx
-
-# Load into Chrome
-# 1. Open chrome://extensions
-# 2. Enable Developer Mode
-# 3. Click "Load unpacked"
-# 4. Select the src/ folder
 ```
+
+### Loading into Chrome
+
+1. Open `chrome://extensions`
+2. Enable **Developer Mode**
+3. Click **Load unpacked**
+4. Select the `src/` folder
 
 No build step, no package manager, no dependencies. The extension is ready to load as-is.
 

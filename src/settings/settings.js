@@ -5,6 +5,10 @@ const STORAGE_KEYS = {
   WARNING_MODE: 'warningMode'
 };
 
+function applyTheme(theme) {
+  document.body.classList.toggle('dark', theme === 'dark');
+}
+
 async function init() {
   const toggleProtection = document.getElementById('toggleProtection');
   const toggleNotifications = document.getElementById('toggleNotifications');
@@ -18,6 +22,8 @@ async function init() {
   const notifications = all.notificationsEnabled !== false;
   const theme = all.theme || 'light';
   const warningMode = all.warningMode || 'block';
+
+  applyTheme(theme);
 
   toggleProtection.classList.toggle('active', protection);
   toggleNotifications.classList.toggle('active', notifications);
@@ -44,7 +50,9 @@ async function init() {
   });
 
   selectTheme.addEventListener('change', () => {
-    saveSetting(STORAGE_KEYS.THEME, selectTheme.value);
+    const val = selectTheme.value;
+    applyTheme(val);
+    saveSetting(STORAGE_KEYS.THEME, val);
   });
 
   selectWarningMode.addEventListener('change', () => {

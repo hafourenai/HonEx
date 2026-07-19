@@ -11,6 +11,10 @@ async function init() {
   const toggle = document.getElementById('toggleProtection');
   const modelInfo = document.getElementById('modelInfo');
 
+  const all = await chrome.storage.sync.get(null);
+  const theme = all.theme || 'light';
+  document.body.classList.toggle('dark', theme === 'dark');
+
   const response = await chrome.runtime.sendMessage({ type: 'GET_STATUS' });
 
   const isActive = response.protectionEnabled !== false;

@@ -1,7 +1,7 @@
 import { loadForestModel } from './forestLoader.js';
 import { RandomForest } from './randomForest.js';
 
-const DEFAULT_THRESHOLD = 0.5;
+const DEFAULT_THRESHOLD = 0.85;
 
 export class Predictor {
   constructor(model, options = {}) {
@@ -39,14 +39,60 @@ export class Predictor {
     }
   }
 
+  _getFeatureIndex(name) {
+    if (!this._nameIndexMap) {
+      this._nameIndexMap = {};
+      for (let i = 0; i < this.forest.featureNames.length; i++) {
+        this._nameIndexMap[this.forest.featureNames[i]] = i;
+      }
+    }
+    return this._nameIndexMap[name];
+  }
+
+  _applyPostProcess(features, rawProbability) {
+    let boost = 0;
+
+    const idxVowels = this._getFeatureIndex('qty_vowels_domain');
+    if (idxVowels !== undefined && features[idxVowels] === 0) {
+      boost += 0.08;
+    }
+
+    const idxDotDomain = this._getFeatureIndex('qty_dot_domain');
+    if (idxDotDomain !== undefined && features[idxDotDomain] > 2) {
+      boost += 0.05;
+    }
+
+    const idxHyphenDomain = this._getFeatureIndex('qty_hyphen_domain');
+    if (idxHyphenDomain !== undefined && features[idxHyphenDomain] > 2) {
+      boost += 0.05;
+    }
+
+    const idxLengthUrl = this._getFeatureIndex('length_url');
+    if (idxLengthUrl !== undefined && features[idxLengthUrl] > 200) {
+      boost += 0.05;
+    }
+
+    const probability = Math.min(rawProbability + boost, 1.0);
+
+    if (boost > 0) {
+      console.log(
+        `[HonEx] Post-process boost: raw=${rawProbability.toFixed(4)} boost=${boost.toFixed(2)} final=${probability.toFixed(4)}`
+      );
+    }
+
+    return probability;
+  }
+
   predict(features) {
     this.validateFeatures(features);
     const rfResult = this.forest.predict(features);
-    const isPhishing = rfResult.phishingProbability > this.threshold;
+    const rawProbability = rfResult.phishingProbability;
+    const probability = this._applyPostProcess(features, rawProbability);
+    const isPhishing = probability > this.threshold;
     return {
       prediction: isPhishing ? 'phishing' : 'legitimate',
       isPhishing,
-      probability: rfResult.phishingProbability,
+      probability,
       confidence: rfResult.confidence,
       threshold: this.threshold
     };
@@ -55,7 +101,9 @@ export class Predictor {
   predictWithDetails(features) {
     this.validateFeatures(features);
     const rfResult = this.forest.predict(features);
-    const isPhishing = rfResult.phishingProbability > this.threshold;
+    const rawProbability = rfResult.phishingProbability;
+    const probability = this._applyPostProcess(features, rawProbability);
+    const isPhishing = probability > this.threshold;
     const featureValues = {};
     for (let i = 0; i < this.forest.featureNames.length; i++) {
       featureValues[this.forest.featureNames[i]] = features[i];
@@ -63,7 +111,8 @@ export class Predictor {
     return {
       prediction: isPhishing ? 'phishing' : 'legitimate',
       isPhishing,
-      probability: rfResult.phishingProbability,
+      probability,
+      rawProbability,
       confidence: rfResult.confidence,
       threshold: this.threshold,
       classProbabilities: rfResult.classProbabilities,

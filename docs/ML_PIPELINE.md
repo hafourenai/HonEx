@@ -130,12 +130,12 @@ The 33 selected features:
 | 17 | `qty_hyphen_file` | Count of `-` in file |
 | 18 | `qty_hyphen_params` | Count of `-` in params |
 | 19 | `qty_hyphen_url` | Count of `-` in full URL |
-| 20 | `qty_mx_servers` | MX record count (external — set to 0 in browser) |
+| 20 | `qty_mx_servers` | MX record count (external — default 2, DNS lookup unavailable in browser) |
 | 21 | `qty_percent_directory` | Count of `%` in directory |
 | 22 | `qty_percent_params` | Count of `%` in params |
 | 23 | `qty_questionmark_directory` | Count of `?` in directory |
 | 24 | `qty_questionmark_params` | Count of `?` in params |
-| 25 | `qty_redirects` | Number of redirects (external — set to 0 in browser) |
+| 25 | `qty_redirects` | Number of redirects (external — default 1, tracked via `webNavigation` API) |
 | 26 | `qty_slash_params` | Count of `/` in params |
 | 27 | `qty_slash_url` | Count of `/` in full URL |
 | 28 | `qty_tld_url` | TLD segment count |
@@ -308,6 +308,6 @@ This produces identical results to scikit-learn's `predict_proba()` because the 
 
 ## Limitations
 
-- **`qty_mx_servers`** — Requires DNS MX record lookup. Not available in browser JavaScript. Defaults to 0.
-- **`qty_redirects`** — Requires tracking HTTP redirect chain. Could be implemented via `webNavigation` API but currently defaults to 0.
+- **`qty_mx_servers`** — Requires DNS MX record lookup. Not available in browser JavaScript. Defaults to 2 (typical for legitimate sites).
+- **`qty_redirects`** — Requires tracking HTTP redirect chain. Tracked in real-time via `webNavigation` API (`onBeforeRedirect`); defaults to 1 for unseen domains.
 - **Model size** — ≈ 23 MB uncompressed JSON. This is large for a Chrome Extension and could be optimized with quantization or pruning.

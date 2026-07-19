@@ -9,117 +9,125 @@ HonEx is a Manifest V3 Chrome Extension with a pure-JavaScript machine learning 
 HonEx follows the standard Chrome Extension MV3 architecture with a non-persistent background service worker, an action popup, and extension pages.
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│                     CHROME EXTENSION LAYER                        │
-│                                                                  │
-│  ┌──────────────────────────────────────────────┐               │
-│  │         Background Service Worker             │               │
-│  │         (service_worker.js)                   │               │
-│  │                                              │               │
-│  │  ┌──────────────┐    ┌──────────────────┐   │               │
-│  │  │ Message      │    │ Navigation       │   │               │
-│  │  │ Router       │───▸│ Handler          │   │               │
-│  │  │              │    │                  │   │               │
-│  │  │ CHECK_URL    │    │ analyzeUrl()     │   │               │
-│  │  │ GET_STATUS   │    │ shouldSkipUrl()  │   │               │
-│  │  │ SET_PROTECT  │    │ redirectToWarn() │   │               │
-│  │  │ BYPASS_URL   │    └────────┬─────────┘   │               │
-│  │  │ NAVIGATE_TO  │             │              │               │
-│  │  │ GO_BACK      │             ▼              │               │
-│  │  └──────┬───────┘    ┌──────────────────┐   │               │
-│  │         │            │ Model Manager    │   │               │
-│  │         │            │ (modelManager.js)│   │               │
-│  │         │            │                  │   │               │
-│  │         │            │ getPredictor()   │   │               │
-│  │         │            │ isModelLoaded()  │   │               │
-│  │         │            │ resetModel()      │   │               │
-│  │         │            └────────┬─────────┘   │               │
-│  │         │                     │              │               │
-│  │         ▼                     ▼              │               │
-│  │  ┌─────────────────────────────────────┐    │               │
-│  │  │     Feature Extractor + Predictor   │    │               │
-│  │  │     (Pure JS — no dependencies)     │    │               │
-│  │  └─────────────────────────────────────┘    │               │
-│  └──────────────────────────────────────────────┘               │
-│                       │              ▲                          │
-│          chrome.tabs   │              │ chrome.runtime           │
-│          .update()     │              │ .sendMessage()           │
-│          .goBack()     ▼              │                          │
-│  ┌──────────────┐  ┌──────────┐  ┌──────────┐  ┌────────────┐  │
-│  │   Popup      │  │ Warning  │  │Dashboard │  │ Settings   │  │
-│  │  (popup/)   │  │ (warning/│  │(dashboard│  │ (settings/ │  │
-│  │             │  │  .html)  │  │  /index  │  │  .html)    │  │
-│  │ Status      │  │ Threat   │  │ .html)   │  │            │  │
-│  │ Toggle      │  │ Score    │  │ Status    │  │ Protection │  │
-│  │ Menu        │  │ Go Back  │  │ Toggle    │  │ Theme      │  │
-│  │             │  │ Continue │  │ Version   │  │ Notif.     │  │
-│  └──────────────┘  └──────────┘  └──────────┘  └────────────┘  │
-└──────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                      CHROME EXTENSION LAYER                           │
+│                                                                      │
+│  ┌──────────────────────────────────────────────────┐               │
+│  │              Background Service Worker             │               │
+│  │              (service_worker.js)                   │               │
+│  │                                                    │               │
+│  │  ┌──────────────┐    ┌──────────────────────────┐  │               │
+│  │  │ Message      │    │ Navigation Handler       │  │               │
+│  │  │ Router       │───▸│ (navigationHandler.js)   │  │               │
+│  │  │              │    │                          │  │               │
+│  │  │ CHECK_URL    │    │ analyzeUrl()             │  │               │
+│  │  │ GET_STATUS   │    │ shouldSkipUrl()          │  │               │
+│  │  │ SET_PROTECT  │    │ redirectToWarning()      │  │               │
+│  │  │ BYPASS_URL   │    └────────┬─────────────────┘  │               │
+│  │  │ NAVIGATE_TO  │             │                    │               │
+│  │  │ GO_BACK      │             ▼                    │               │
+│  │  └──────┬───────┘    ┌─────────────────────┐      │               │
+│  │         │            │ Model Manager        │      │               │
+│  │         │            │ (modelManager.js)    │      │               │
+│  │         │            │                     │      │               │
+│  │         │            │ getPredictor()      │      │               │
+│  │         │            │ isModelLoaded()     │      │               │
+│  │         │            │ resetModel()        │      │               │
+│  │         │            └────────┬────────────┘      │               │
+│  │         │                     │                    │               │
+│  │         ▼                     ▼                    │               │
+│  │  ┌──────────────────────────────────────────┐      │               │
+│  │  │     Feature Extractor + Predictor        │      │               │
+│  │  │     (Pure JS — no dependencies)          │      │               │
+│  │  └──────────────────────────────────────────┘      │               │
+│  │                                                    │               │
+│  │  Redirect tracking:                                 │               │
+│  │  ┌─────────────────────┐                            │               │
+│  │  │ onBeforeRedirect ──▸│ redirectCounts (tabId)     │               │
+│  │  │ onCompleted ───────▸│ domainRedirectHistory     │               │
+│  │  │ onErrorOccurred ───▸│ (domain → count)          │               │
+│  │  └─────────────────────┘                            │               │
+│  └──────────────────────────────────────────────────────┘               │
+│                       │              ▲                                  │
+│          chrome.tabs   │              │ chrome.runtime                   │
+│          .update()     │              │ .sendMessage()                   │
+│          .goBack()     ▼              │                                  │
+│  ┌──────────────┐  ┌──────────┐  ┌──────────┐  ┌────────────┐          │
+│  │   Popup      │  │ Warning  │  │Dashboard │  │ Settings   │          │
+│  │  (popup/)   │  │ (warning/│  │(dashboard│  │ (settings/ │          │
+│  │             │  │  .html)  │  │  /index  │  │  .html)    │          │
+│  │ Status      │  │ Threat   │  │ .html)   │  │            │          │
+│  │ Toggle      │  │ Score    │  │ Status    │  │ Protection │          │
+│  │ Menu        │  │ Go Back  │  │ Toggle    │  │ Theme      │          │
+│  │             │  │ Continue │  │ Version   │  │ Warning    │          │
+│  └──────────────┘  └──────────┘  └──────────┘  │ Mode       │          │
+│                                                 └────────────┘          │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Lifecycle
 
 1. **Install / Startup**: `service_worker.js` → `modelManager.loadModel()` → fetches `rf_trees.json` → validates → instantiates `Predictor`
-2. **Navigation**: `chrome.webNavigation.onBeforeNavigate` → `navigationHandler.handleNavigation()` → `analyzeUrl()` → `features` → `predictor.predict()` → redirect or allow
-3. **User Interaction**: Popup / Dashboard / Settings send messages → `service_worker.onMessage` handles each type
-4. **Model Reset**: Service worker can be terminated by Chrome at any time (MV3). Model is re-loaded on next activation via `getPredictor()`
+2. **Navigation**: `chrome.webNavigation.onCommitted` (skip `auto_toplevel`) → `navigationHandler.handleNavigation()` → checks `bypassedUrls` → `analyzeUrl()` → extract features (with `domainRedirectHistory` for accurate `qty_redirects`) → `predictor.predict()` → threshold comparison → block/warn/log based on warning mode
+3. **Redirect Tracking**: `chrome.webNavigation.onBeforeRedirect` increments per-tab counter → `onCompleted` saves `(domain → count)` to `domainRedirectHistory` → used in subsequent navigations to same domain
+4. **User Interaction**: Popup / Dashboard / Settings send messages → `service_worker.onMessage` handles each type
+5. **Bypass**: User clicks "Continue Anyway" → URL added to `bypassedUrls` Set (30s TTL) → `handleNavigation` checks bypass before analysis
+6. **Model Reset**: Service worker can be terminated by Chrome at any time (MV3). Model is re-loaded on next activation via `getPredictor()`
 
 ---
 
 ## 2. Machine Learning Architecture
 
-The ML system is a Random Forest classifier exported from scikit-learn and reimplemented in pure JavaScript.
+The ML system is a Random Forest classifier exported from scikit-learn and reimplemented in pure JavaScript, with a calibration layer to correct model bias.
 
 ```
-┌────────────────────────────────────────────────────────────┐
-│                MACHINE LEARNING PIPELINE                    │
-│                                                            │
-│  ┌──────────┐    ┌──────────────┐    ┌──────────────────┐  │
-│  │  Dataset  │───▸│  Feature     │───▸│  Random Forest   │  │
-│  │  (CSV)   │    │  Extraction  │    │  Classifier      │  │
-│  │          │    │  (33 cols)   │    │  (100 trees)     │  │
-│  └──────────┘    └──────────────┘    └────────┬─────────┘  │
-│                                               │             │
-│                                               ▼             │
-│  ┌────────────────────────────────────────────────────┐     │
-│  │              Model Export Pipeline                  │     │
-│  │                                                     │     │
-│  │  scikit-learn Tree DecisionTreeClassifier           │     │
-│  │         │                                           │     │
-│  │         ▼                                           │     │
-│  │  Custom JSON Serialization                          │     │
-│  │  (children_left, children_right, threshold,         │     │
-│  │   feature, values for each node)                     │     │
-│  │         │                                           │     │
-│  │         ▼                                           │     │
-│  │  rf_trees.json                                      │     │
-│  │  (n_features, n_classes, n_estimators,              │     │
-│  │   feature_names, trees[])                            │     │
-│  └────────────────────────────────────────────────────┘     │
-│                                                            │
-│  ┌────────────────────────────────────────────────────┐     │
-│  │           JavaScript Inference Engine               │     │
-│  │                                                     │     │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────┐  │     │
-│  │  │ forestLoader │─▸│  Predictor   │─▸│ Random   │  │     │
-│  │  │ .js          │  │  .js         │  │ Forest   │  │     │
-│  │  │              │  │              │  │ .js      │  │     │
-│  │  │ validate     │  │ validateFeat │  │          │  │     │
-│  │  │ fetch        │  │ predict()    │  │ predict()│  │     │
-│  │  │ parse        │  │ predictBatch│  │          │  │     │
-│  │  └──────────────┘  │ setThreshold │  └────┬─────┘  │     │
-│  │                     └──────────────┘       │        │     │
-│  │                                            ▼        │     │
-│  │                                      ┌──────────┐   │     │
-│  │                                      │decision  │   │     │
-│  │                                      │Tree.js   │   │     │
-│  │                                      │          │   │     │
-│  │                                      │walkTree()│   │     │
-│  │                                      │countLeaf │   │     │
-│  │                                      │getDepth  │   │     │
-│  │                                      └──────────┘   │     │
-│  └────────────────────────────────────────────────────┘     │
-└────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────┐
+│                    MACHINE LEARNING PIPELINE                        │
+│                                                                    │
+│  ┌──────────┐    ┌──────────────┐    ┌──────────────────────────┐  │
+│  │  Dataset  │───▸│  Feature     │───▸│  Random Forest           │  │
+│  │  (CSV)   │    │  Extraction  │    │  Classifier              │  │
+│  │          │    │  (33 cols)   │    │  (100 trees)             │  │
+│  └──────────┘    └──────────────┘    └────────┬─────────────────┘  │
+│                                               │                     │
+│                                               ▼                     │
+│  ┌────────────────────────────────────────────────────────────┐    │
+│  │                  Model Export Pipeline                      │    │
+│  │                                                             │    │
+│  │  scikit-learn Tree DecisionTreeClassifier                   │    │
+│  │         │                                                   │    │
+│  │         ▼                                                   │    │
+│  │  Custom JSON Serialization                                  │    │
+│  │  (children_left, children_right, threshold,                 │    │
+│  │   feature, values for each node)                             │    │
+│  │         │                                                   │    │
+│  │         ▼                                                   │    │
+│  │  rf_trees.json                                              │    │
+│  │  (n_features, n_classes, n_estimators,                      │    │
+│  │   feature_names, trees[])                                    │    │
+│  └────────────────────────────────────────────────────────────┘    │
+│                                                                    │
+│  ┌────────────────────────────────────────────────────────────┐    │
+│  │               JavaScript Inference Engine                   │    │
+│  │                                                             │    │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────┐          │    │
+│  │  │ forestLoader │─▸│  Predictor   │─▸│ Random   │          │    │
+│  │  │ .js          │  │  .js         │  │ Forest   │          │    │
+│  │  │              │  │              │  │ .js      │          │    │
+│  │  │ validate     │  │ validateFeat │  │          │          │    │
+│  │  │ fetch        │  │ predict()    │  │ predict()│          │    │
+│  │  │ parse        │  │ predictBatch│  │          │          │    │
+│  │  └──────────────┘  │ setThreshold │  └────┬─────┘          │    │
+│  │                     └──────────────┘       │                │    │
+│  │                                            ▼                │    │
+│  │                                     ┌──────────────┐        │    │
+│  │                                     │ decisionTree │        │    │
+│  │                                     │ .js           │        │    │
+│  │                                     │              │        │    │
+│  │                                     │ walkTree()   │        │    │
+│  │                                     └──────────────┘        │    │
+│  └────────────────────────────────────────────────────────────┘    │
+└────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Inference Algorithm
@@ -131,45 +139,60 @@ The ML system is a Random Forest classifier exported from scikit-learn and reimp
    - Compare `features[feature_index]` to `threshold`
    - Navigate left (≤) or right (>) until leaf (`children_left === -1`)
    - Record leaf votes `[count_class_0, count_class_1]`
-4. **Aggregation**: Sum votes across all trees → divide by 100 → class probabilities
-5. **Decision**: `phishingProbability > threshold` (default 0.5) → phishing
+4. **Aggregation**: Sum votes across all trees → divide by 100 → raw class probabilities
+5. **Decision**: `phishingProbability > threshold` (default 0.85) → phishing
 
 ---
 
 ## 3. Module Relationships
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    MODULE DEPENDENCY GRAPH                       │
-│                                                                 │
-│  service_worker.js                                               │
-│       │                                                         │
-│       ├── navigationHandler.js                                   │
-│       │       ├── featureBuilder.js                              │
-│       │       │       ├── urlParser.js                           │
-│       │       │       ├── charCounter.js                         │
-│       │       │       └── domainFeatures.js                      │
-│       │       │               └── charCounter.js                 │
-│       │       │                                                  │
-│       │       ├── modelManager.js                                │
-│       │       │       ├── predictor.js                           │
-│       │       │       │       ├── forestLoader.js                │
-│       │       │       │       └── randomForest.js                │
-│       │       │       │               └── decisionTree.js        │
-│       │       │       │                                          │
-│       │       │       └── forestLoader.js                        │
-│       │       │                                                  │
-│       │       └── storage.js ─── constants.js                    │
-│       │                                                          │
-│       └── storage.js ─── constants.js                            │
-│                                                                  │
-│  popup.js ─────────→ chrome.runtime.sendMessage ───→ service_    │
-│  warning.js ───────→ chrome.runtime.sendMessage ───→ worker.js   │
-│  dashboard.js ─────→ chrome.runtime.sendMessage ───→ (message    │
-│  settings.js ──────→ chrome.storage.sync           │  router)    │
-│                                                       │          │
-│  All pages ←── chrome.tabs.update / goBack ←─────────┘          │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      MODULE DEPENDENCY GRAPH                             │
+│                                                                         │
+│  service_worker.js                                                       │
+│       │  ┌──────────────────────────────────────────────┐               │
+│       │  │ Redirect Tracking (local state):              │               │
+│       │  │  redirectCounts: Map<tabId, count>            │               │
+│       │  │  domainRedirectHistory: Map<domain, count>    │               │
+│       │  └──────────────────────────────────────────────┘               │
+│       │  bypassedUrls: Set<string>                                      │
+│       │                                                                 │
+│       ├── onBeforeNavigate → handleNavigation(details, bypassedUrls,    │
+│       │                          domainRedirectHistory)                  │
+│       │                                                                 │
+│       ├── navigationHandler.js                                           │
+│       │       ├── analyzeUrl(url, redirectHistory)                       │
+│       │       │       ├── extractFeatures(url, overrides)               │
+│       │       │       │       ├── urlParser.js                          │
+│       │       │       │       ├── charCounter.js                        │
+│       │       │       │       └── domainFeatures.js                     │
+│       │       │       │               └── charCounter.js                │
+│       │       │       │                                                 │
+│       │       │       ├── getPredictor()                                │
+│       │       │       │       └── predictor.js                          │
+│       │       │       │               ├── forestLoader.js               │
+│       │       │       │               ├── randomForest.js               │
+│       │       │       │               │       └── decisionTree.js       │
+│       │       │       │               └── calibrate() (Platt scaling)   │
+│       │       │       │                                                 │
+│       │       │       └── storage.js ─── constants.js                   │
+│       │       │                                                         │
+│       │       ├── shouldSkipUrl(url)                                    │
+│       │       └── redirectToWarning(tabId, url, prob)                   │
+│       │                                                                 │
+│       ├── onBeforeRedirect → redirectCounts                             │
+│       ├── onCompleted → domainRedirectHistory                           │
+│       ├── onErrorOccurred → cleanup redirectCounts                      │
+│       └── storage.js ─── constants.js                                   │
+│                                                                         │
+│  popup.js ─────────→ chrome.runtime.sendMessage ────→ service_          │
+│  warning.js ───────→ chrome.runtime.sendMessage ────→ worker.js          │
+│  dashboard.js ─────→ chrome.runtime.sendMessage ────→ (message           │
+│  settings.js ──────→ chrome.storage.sync              │  router)         │
+│                                                         │                │
+│  All pages ←── chrome.tabs.update / goBack ←───────────┘                │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -179,13 +202,15 @@ The ML system is a Random Forest classifier exported from scikit-learn and reimp
 ### Safe URL Flow
 
 ```
-User clicks link (https://example.com/page)
+User clicks link (https://www.youtube.com)
          │
          ▼
-webNavigation.onBeforeNavigate fires
+webNavigation.onCommitted fires (skip auto_toplevel)
          │
          ▼
-handleNavigation(details)
+handleNavigation(details, bypassedUrls, domainRedirectHistory)
+         │
+         ├── bypassedUrls.has(url) → false
          │
          ├── isProtectionEnabled() → true
          │
@@ -193,21 +218,25 @@ handleNavigation(details)
          │
          ├── shouldSkipUrl(url) → false
          │
-         ├── analyzeUrl(url)
+         ├── analyzeUrl(url, domainRedirectHistory)
          │       │
-         │       ├── extractFeatures(url)
+         │       ├── lookup domain in domainRedirectHistory
+         │       │   → overrides.qty_redirects = 1 (from history)
+         │       │
+         │       ├── extractFeatures(url, overrides)
          │       │       ├── parseUrl(url)
          │       │       ├── countChar() × 20
          │       │       ├── extractDomainFeatures()
+         │       │       ├── qty_mx_servers = 2 (default)
          │       │       └── assemble 33-feature vector
          │       │
          │       ├── predictor.predict(features)
          │       │       ├── validateFeatures()
          │       │       ├── randomForest.predict()
          │       │       │       └── walkTree() × 100
-         │       │       └── return { isPhishing: false, probability: 0.03 }
+         │       │       └── return { isPhishing: false, probability: 0.77 }
          │       │
-         │       └── return { prediction: "safe", probability: 0.03 }
+         │       └── return { prediction: "safe", probability: 0.77 }
          │
          └── prediction === SAFE → do nothing (navigation proceeds)
 ```
@@ -218,25 +247,33 @@ handleNavigation(details)
 User clicks link (https://phish.example.com/login?ref=evil)
          │
          ▼
-webNavigation.onBeforeNavigate fires
+webNavigation.onCommitted fires
          │
          ▼
-handleNavigation(details)
+handleNavigation(details, bypassedUrls, domainRedirectHistory)
          │
-         ├── analyzeUrl(url) → { prediction: "phishing", probability: 0.94 }
+         ├── analyzeUrl(url, redirectHistory)
+         │       └── predictor.predict(features)
+         │               └── probability = 0.95, isPhishing = true
          │
          ├── prediction === PHISHING
          │
-         ├── redirectToWarning(tabId, url, 0.94)
-         │       │
-         │       └── chrome.tabs.update(tabId, {
-         │             url: "warning.html?targetUrl=...&probability=0.94"
-         │           })
+         ├── check warningMode:
+         │   ├── "block" → redirectToWarning(tabId, url, 0.95)
+         │   │       │
+         │   │       └── chrome.tabs.update(tabId, {
+         │   │             url: "warning.html?targetUrl=...&probability=0.95"
+         │   │           })
+         │   │
+         │   ├── "warn" → chrome.notifications.create()
+         │   │       (page continues loading with visible warning)
+         │   │
+         │   └── "log" → console.log only
          │
          ▼
     Warning Page displays:
     - Original URL
-    - Confidence: 94%
+    - Confidence: 95%
     - [Go Back] [Continue Anyway]
 ```
 
@@ -255,15 +292,20 @@ warning.js:
          └── chrome.tabs.update(tab.id, { url })
                  │
                  ▼
-        webNavigation.onBeforeNavigate fires
+        webNavigation.onCommitted fires
                  │
                  ├── handleNavigation()
-                 │       └── analyzeUrl() → PHISHING
+                 │       ├── bypassedUrls.has(url) → true
+                 │       │   → return early (skip analysis)
+                 │       │
+                 │       └── Navigation proceeds to original URL
                  │
-                 ├── BUT: bypassedUrls.has(url) → true
-                 │       → return { prediction: "safe", bypassed: true }
-                 │
-                 └── Navigation proceeds to original URL
+                 ▼
+        During navigation:
+        - onBeforeRedirect fires → redirectCounts[tabId]++
+        - onCompleted fires → save (domain → count) to
+          domainRedirectHistory
+        - Next visit to same domain uses stored redirect count
 ```
 
 ---
@@ -272,16 +314,28 @@ warning.js:
 
 | Component | Responsibility |
 |---|---|
-| **Service Worker** | Message router, navigation listener, model lifecycle |
-| **Navigation Handler** | URL analysis orchestration, skip-list, warning redirect |
+| **Service Worker** | Message router, navigation listener, model lifecycle, redirect tracking (`redirectCounts`, `domainRedirectHistory`), bypass set management |
+| **Navigation Handler** | URL analysis orchestration (via `onCommitted`), bypass check, skip-list, domain redirect lookup, feature extraction with overrides, warning redirect (block) / notification (warn) |
 | **Model Manager** | Singleton predictor cache, lazy loading |
-| **Predictor** | Feature validation, threshold config, result formatting |
-| **Random Forest** | Soft-voting aggregation, class probability computation |
+| **Predictor** | Feature validation, threshold config, Random Forest inference, **Platt scaling calibration**, result formatting |
+| **Random Forest** | Soft-voting aggregation, raw class probability computation |
 | **Decision Tree** | Single tree traversal following scikit-learn node structure |
 | **Forest Loader** | Model fetch, parse, structural validation |
-| **Feature Builder** | 33-feature extraction orchestration |
+| **Feature Builder** | 33-feature extraction orchestration, external feature defaults (`qty_mx_servers=2`, `qty_redirects=1`), override support |
 | **URL Parser** | URL → {domain, directory, file, params} decomposition |
 | **Domain Features** | Domain-specific metrics (length, dots, hyphens, vowels) |
 | **Char Counter** | Character occurrence counting utility |
 | **Storage** | `chrome.storage.sync` wrapper with typed accessors |
-| **Constants** | Enums, storage keys, defaults, warning page config |
+| **Constants** | Enums, storage keys, defaults (threshold=0.85), warning page config |
+
+---
+
+## 6. Key Configuration
+
+| Parameter | Default | Description |
+|---|---|---|
+| **Threshold** | 0.85 | Minimum probability to classify as phishing |
+| **Warning Mode** | `block` | `block` = redirect to warning page, `warn` = show notification (page loads), `log` = console log only |
+| **qty_mx_servers** | 2 | External feature default (DNS lookup unavailable in browser) |
+| **qty_redirects** | 1 | External feature default (tracked via webNavigation API) |
+| **Bypass TTL** | 30s | How long a bypassed URL remains whitelisted |

@@ -1,24 +1,24 @@
 {
   "manifest_version": 3,
-  "name": "HonEx - AI Phishing Protection",
+  "name": "HonEx",
   "version": "1.0.0",
   "description": "Real-time phishing detection powered by on-device machine learning. All analysis happens locally in your browser.",
   "author": "Aldi Nova",
 
   "icons": {
-    "16": "assets/icons/icon-16.svg",
-    "48": "assets/icons/icon-48.svg",
-    "128": "assets/icons/icon-128.svg"
+    "16": "assets/Logo.png",
+    "48": "assets/Logo.png",
+    "128": "assets/Logo.png"
   },
 
   "action": {
     "default_popup": "popup/popup.html",
     "default_icon": {
-      "16": "assets/icons/icon-16.svg",
-      "48": "assets/icons/icon-48.svg",
-      "128": "assets/icons/icon-128.svg"
+      "16": "assets/Logo.png",
+      "48": "assets/Logo.png",
+      "128": "assets/Logo.png"
     },
-    "default_title": "HonEx - AI Phishing Protection"
+    "default_title": "HonEx"
   },
 
   "background": {
@@ -34,7 +34,8 @@
   "permissions": [
     "webNavigation",
     "storage",
-    "tabs"
+    "tabs",
+    "notifications"
   ],
 
   "host_permissions": [
