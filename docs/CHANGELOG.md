@@ -110,11 +110,58 @@ All notable changes to HonEx are documented in this file.
 | `src/manifest.json` | Added `"dns"` permission |
 | `package.json` | Added `"type": "module"` |
 
+## [1.2.0] — 2026-07-26
+
+### Added
+
+#### Exact Brand Pre-Filter
+
+- `isExactBrandDomain()` runs BEFORE the ML pipeline in `analyzeUrl()`
+- If the second-level domain (SLD) exactly matches a known brand (e.g., `google`, `github`, `tokopedia`), the URL is immediately classified as SAFE — no RF inference needed
+- Handles subdomains (`mail.google.com` → `google`) and two-part TLDs (`bca.co.id` → `bca`)
+- Eliminates false positives for legitimate brand domains entirely
+
+#### Shared Brand List (`src/ai/brands.js`)
+
+- Centralized, authoritative list of 60 protected brands
+- Used by both the typosquatting detector and navigation handler (brand whitelist)
+- Single source of truth — add/remove brands in one place
+
+#### `extractSld()` Domain Parser
+
+- Replaced `getRegistrableDomain()` with `extractSld()` for correct subdomain handling
+- Handles two-part TLDs (`.co.id`, `.co.uk`, `.com.au`, etc.) with a `KNOWN_TWO_PART_TLDS` list
+- Correctly extracts `google` from `mail.google.com` and `bca` from `www.bca.co.id`
+
+### Changed
+
+- `src/ai/typosquattingDetector.js` now imports `BRAND_NAMES` from `src/ai/brands.js` instead of maintaining its own list
+- Embedded brand check in typosquatting detector: only flags if extra characters contain hyphens, numbers, or suspicious words (`login`, `verify`, `secure`, etc.) — eliminates false positives on legitimate sub-brands like `googleapis.com`
+- Levenshtein typosquatting check: skips if the original domain is itself a known brand — prevents `github` from being flagged as typosquatting `gitlab`
+
+### Fixed
+
+- `github.com/hafourenai` no longer flagged as phishing (pre-filter catches `github` as exact brand match)
+- `googleapis.com`, `googleservices.com` no longer falsely detected as typosquatting (embedded check requires suspicious extra characters)
+- `github.com` no longer falsely detected as typosquatting `gitlab` (brand-is-brand guard)
+- Subdomain brand detection: `mail.google.com` now correctly identifies `google`
+
+### File Changes
+
+| File | Change |
+|---|---|
+| `src/ai/brands.js` | **New** — shared 60-brand list |
+| `src/ai/typosquattingDetector.js` | Imports from `brands.js`, safer embedded check, brand-is-brand guard |
+| `src/background/navigationHandler.js` | `extractSld()` replaces `getRegistrableDomain()`, `isExactBrandDomain()` pre-filter |
+| `docs/CHANGELOG.md` | Updated |
+| `docs/PROJECT_STRUCTURE.md` | Updated |
+| `docs/API_REFERENCE.md` | Updated |
+
 ## [Unreleased]
 
 ### Planned
 
-- Typosquatting detector brand list expansion
+- Brand list expansion
 - Content script for login form analysis
 - Local statistics dashboard (blocked sites count, detection rate)
 - WebAssembly-accelerated tree traversal

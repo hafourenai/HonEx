@@ -3,8 +3,17 @@ import { getPredictor } from './modelManager.js';
 import { isProtectionEnabled, getThreshold, getWarningMode, isNotificationsEnabled } from '../utils/storage.js';
 import { PREDICTION, PREDICTION_ZONE, WARNING_PAGE, WARNING_MODES } from '../utils/constants.js';
 import { analyzeWithAI, isAIAvailable } from '../ai/typosquattingDetector.js';
+import { BRAND_NAMES } from '../ai/brands.js';
 
 const IPV4_REGEX = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+const KNOWN_TWO_PART_TLDS = Object.freeze([
+  'co.id', 'or.id', 'ac.id', 'go.id', 'sch.id', 'web.id',
+  'co.uk', 'org.uk', 'ac.uk', 'gov.uk',
+  'co.jp', 'ne.jp', 'or.jp',
+  'com.au', 'net.au', 'org.au',
+  'com.br', 'org.br', 'net.br',
+  'co.kr', 'or.kr', 'ne.kr'
+]);
 
 function isIpAddress(hostname) {
   return IPV4_REGEX.test(hostname) || (hostname.startsWith('[') && hostname.endsWith(']'));
@@ -55,31 +64,25 @@ async function resolveDomain(domain) {
   return { resolved: false, addresses: [], count: 0 };
 }
 
-function getRegistrableDomain(hostname) {
+function extractSld(hostname) {
   const parts = hostname.toLowerCase().replace(/^www\./, '').split('.');
-  if (parts.length < 2) return hostname;
-  const tld = parts[parts.length - 1];
-  if (tld.length <= 3 && parts.length >= 3) {
-    return parts[parts.length - 3] + '.' + parts[parts.length - 2] + '.' + tld;
+  if (parts.length < 2) return parts[0];
+  const lastTwo = parts.slice(-2).join('.');
+  if (KNOWN_TWO_PART_TLDS.includes(lastTwo) && parts.length >= 3) {
+    return parts[parts.length - 3];
   }
-  return parts[parts.length - 2] + '.' + parts[parts.length - 1];
+  return parts[parts.length - 2];
+}
+
+function isExactBrandDomain(domain) {
+  if (!domain) return false;
+  return BRAND_NAMES.includes(extractSld(domain));
 }
 
 function isHighValueBrand(domain) {
-  const brands = [
-    'google', 'facebook', 'instagram', 'whatsapp', 'twitter', 'x.com',
-    'linkedin', 'youtube', 'tiktok', 'amazon', 'apple', 'microsoft',
-    'github', 'gitlab', 'netflix', 'spotify', 'paypal', 'stripe',
-    'shopify', 'wordpress', 'cloudflare', 'dropbox', 'docusign',
-    'adobe', 'canva', 'zoom', 'teams', 'office', 'outlook', 'hotmail',
-    'gmail', 'yahoo', 'binance', 'coinbase', 'mandiri',
-    'bca', 'bni', 'bri', 'gojek', 'grab', 'tokopedia', 'shopee',
-    'bukalapak', 'lazada', 'blibli', 'traveloka'
-  ];
   if (!domain) return false;
-  const registrable = getRegistrableDomain(domain);
-  const base = registrable.split('.')[0];
-  return brands.some(brand => base === brand || base.includes(brand));
+  const sld = extractSld(domain);
+  return BRAND_NAMES.some(brand => sld === brand || sld.includes(brand));
 }
 
 export async function analyzeUrl(url, redirectHistory = new Map()) {
@@ -123,6 +126,16 @@ export async function analyzeUrl(url, redirectHistory = new Map()) {
         prediction: PREDICTION.PHISHING,
         probability: 0.95,
         zone: PREDICTION_ZONE.PHISHING,
+        error: null
+      };
+    }
+
+    if (domain && isExactBrandDomain(domain)) {
+      console.log(`[HonEx] PRE-FILTER SAFE (known brand): ${domain}`);
+      return {
+        prediction: PREDICTION.SAFE,
+        probability: 0,
+        zone: PREDICTION_ZONE.SAFE,
         error: null
       };
     }

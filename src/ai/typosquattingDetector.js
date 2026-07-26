@@ -1,17 +1,4 @@
-const BRANDS = [
-  'google', 'facebook', 'instagram', 'whatsapp', 'twitter',
-  'linkedin', 'youtube', 'tiktok', 'amazon', 'apple',
-  'microsoft', 'github', 'gitlab', 'netflix', 'spotify',
-  'paypal', 'stripe', 'shopify', 'wordpress', 'cloudflare',
-  'dropbox', 'docusign', 'adobe', 'canva', 'zoom',
-  'teams', 'outlook', 'hotmail', 'gmail', 'yahoo',
-  'binance', 'coinbase', 'mandiri', 'bca', 'bni',
-  'bri', 'gojek', 'grab', 'tokopedia', 'shopee',
-  'bukalapak', 'lazada', 'blibli', 'traveloka', 'dana',
-  'ovo', 'gopay', 'bpjs', 'kredivo', 'akulaku',
-  'pedulilindungi', 'kemenkes', 'pajak', 'sicepat', 'jne',
-  'jnt', 'ninja', 'wahana'
-];
+import { BRAND_NAMES } from './brands.js';
 
 const HOMOGLYPH_MAP = {
   '0': 'o', '1': 'i', '2': 'z', '3': 'e', '4': 'a', '5': 's',
@@ -61,13 +48,14 @@ function isTyposquatting(domain) {
   const base = normalizeDomain(domain);
   const decoded = decodeText(base);
 
-  for (const brand of BRANDS) {
+  for (const brand of BRAND_NAMES) {
     const decodedBrand = decodeText(brand);
     const dist = levenshtein(decoded, decodedBrand);
     const threshold = getThreshold(brand.length);
 
     if (dist <= threshold) {
       if (dist === 0 && base === brand) continue;
+      if (BRAND_NAMES.includes(base) && dist > 0) continue;
 
       const maxLen = Math.max(decoded.length, decodedBrand.length);
       const similarity = maxLen > 0 ? 1 - (dist / maxLen) : 0;
@@ -77,7 +65,13 @@ function isTyposquatting(domain) {
     }
 
     if (decoded.includes(decodedBrand) && decoded.length > decodedBrand.length + 1) {
-      return { brand, similarity: 0.7, distance: 0, type: 'embedded' };
+      const extra = decoded.replace(decodedBrand, '');
+      const hasHyphen = extra.includes('-');
+      const hasNumber = /[0-9]/.test(extra);
+      const hasSuspiciousWord = /login|verify|secure|confirm|update|signin|account|reset/i.test(extra);
+      if (hasHyphen || hasNumber || hasSuspiciousWord) {
+        return { brand, similarity: 0.7, distance: 0, type: 'embedded' };
+      }
     }
   }
 

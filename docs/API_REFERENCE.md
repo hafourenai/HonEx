@@ -6,9 +6,23 @@ Complete documentation of all major classes, functions, and modules in HonEx.
 
 ## 0. AI Detection (`src/ai/`)
 
+### Shared Brand List (`brands.js`)
+
+Centralized authoritative list of 60 protected brands. Single source of truth — consumed by both the typosquatting detector and the navigation handler's brand whitelist.
+
+```javascript
+import { BRAND_NAMES } from '../ai/brands.js';
+```
+
+| Export | Type | Description |
+|---|---|---|
+| `BRAND_NAMES` | `string[]` | 60 lowercase brand names (e.g., `'google'`, `'mandiri'`, `'bca'`, `'github'`) |
+
+**Usage**: Add or remove brand names in this array. Both the typosquatting detector and the gray zone brand whitelist will pick up the changes automatically.
+
 ### Typosquatting Detector (`typosquattingDetector.js`)
 
-Pure JavaScript domain typosquatting detector. Compares domain base names against 50+ protected brands using Levenshtein distance and homoglyph decoding. Zero dependencies, zero additional downloads.
+Pure JavaScript domain typosquatting detector. Imports `BRAND_NAMES` from `brands.js` and compares domain base names against all 60+ brands using Levenshtein distance and homoglyph decoding. Zero dependencies, zero additional downloads.
 
 #### Exported Functions
 
@@ -36,12 +50,13 @@ null
 
 #### Detection Algorithm
 
-1. **Normalize domain**: extract second-level domain (e.g., `g00gle.com` → `g00gle`)
+1. **Normalize domain**: extract second-level domain via `extractSld()` (e.g., `g00gle.com` → `g00gle`)
 2. **Decode homoglyphs**: map visually similar characters (`0→o`, `1→i`, `5→s`, `rn→m`, `vv→w`, etc.)
 3. **Levenshtein distance**: compare decoded domain against each brand's decoded name
 4. **Threshold**: 1 edit for ≤4 char brands, 2 for 5–7 char, 3 for 8+ char
-5. **Embedded brand**: check if decoded domain contains a brand name + extra characters
+5. **Embedded brand**: check if decoded domain contains a brand name + extra characters; only flags if extras include hyphens, numbers, or suspicious words (`login`, `verify`, `secure`, etc.)
 6. **Exact match skip**: if decoded domain equals brand exactly, it's the legitimate site (not a typosquat)
+7. **Brand-is-brand guard**: if the original (pre-decode) domain is itself a known brand, skip all Levenshtein checks — prevents `github` from being flagged as typosquatting `gitlab`
 
 ---
 

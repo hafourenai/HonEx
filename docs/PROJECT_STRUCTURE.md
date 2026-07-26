@@ -41,8 +41,9 @@ Static assets used by the extension's UI pages.
 Lightweight AI-powered detection modules (pure JavaScript, zero dependencies, zero additional downloads).
 
 | File | Purpose |
-|---|---|
-| `typosquattingDetector.js` | Typosquatting detector using Levenshtein distance + homoglyph decoding. Compares domain against 50+ protected brands (Google, Mandiri, BCA, Gojek, etc.) — catches `g00gle.com`, `rnandiri.com`, `shopee-sale.com`, etc. |
+|---|---|---|
+| `brands.js` | **Shared brand list.** Centralized, authoritative list of 60 protected brands (Google, Mandiri, BCA, Gojek, Github, Gitlab, etc.). Single source of truth consumed by both the typosquatting detector and navigation handler (brand whitelist). Add/remove brands in one place. |
+| `typosquattingDetector.js` | Typosquatting detector using Levenshtein distance + homoglyph decoding. Imports `BRAND_NAMES` from `brands.js`. Catches `g00gle.com`, `rnandiri.com`, `shopee-sale.com`, etc. |
 
 ### `src/background/`
 

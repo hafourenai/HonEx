@@ -52,7 +52,7 @@ HonEx addresses both problems:
 ```
 HonEx/
 ├── src/                    # Chrome Extension source
-│   ├── ai/                 Typosquatting & lightweight detection modules
+│   ├── ai/                 Brand list, typosquatting & lightweight detection modules
 │   ├── assets/             Icons, logo, developer photo
 │   ├── background/         Service worker, navigation handler, model manager
 │   ├── dashboard/          About / status page

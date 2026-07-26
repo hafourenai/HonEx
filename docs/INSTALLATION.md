@@ -180,9 +180,8 @@ To verify the warning page works correctly, you can simulate a phishing URL dete
 If you have Node.js installed, you can verify the ML engine works correctly:
 
 ```bash
-cd trash/tests
-node test_inference.mjs
-node test_features.mjs
+node trash/tests/test_inference.mjs
+node trash/tests/test_features.mjs
 ```
 
 These tests validate:
