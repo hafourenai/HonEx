@@ -98,7 +98,7 @@ async function handleCheckUrl(request, sender, sendResponse) {
   try {
     const { analyzeUrl } = await import('./navigationHandler.js');
     if (bypassedUrls.has(request.url)) {
-      sendResponse({ prediction: 'safe', probability: 0, bypassed: true });
+      sendResponse({ prediction: 'safe', probability: 0, zone: 'safe', bypassed: true });
       return;
     }
     const result = await analyzeUrl(request.url);

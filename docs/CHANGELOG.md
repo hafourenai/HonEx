@@ -59,14 +59,64 @@ All notable changes to HonEx are documented in this file.
 
 ---
 
+## [1.1.0] — 2026-07-26
+
+### Added
+
+#### Three-Zone Decision Boundary
+
+- **Three confidence zones**: `safe` (< 0.75), `gray_zone` (0.75–0.95), `phishing` (> 0.95)
+- Gray zone URLs are no longer immediately blocked — instead, they go through secondary checks before deciding
+- Configurable `grayZoneMargin` (±0.10 around threshold) on `Predictor`
+
+#### Dynamic Post-Processing
+
+- Heuristic boosts (no vowels, >2 dots, >2 hyphens, URL >200 chars) are now scaled by model uncertainty
+- Only applies when raw probability ≥ 0.5 (doesn't push legitimate URLs toward phishing)
+- Scaling formula: `boost × (1 − certainty)` — full boost when uncertain, near-zero when confident
+- Previous behavior added fixed +0.08–0.23 boost unconditionally, causing false positives
+
+#### Secondary Checks for Gray Zone
+
+- **High-value brand whitelist** (~50 brands: Google, Mandiri, BCA, Gojek, etc.) — known brands in gray zone are automatically reclassified as safe
+- **DNS resolution check** via `chrome.dns.resolve()` — domains that don't resolve remain flagged
+- **Typosquatting Detector** (`src/ai/typosquattingDetector.js`) — Levenshtein distance + homoglyph decoder that catches domain impersonation (e.g., `g00gle.com`, `rnandiri.com`, `shopee-sale.com`) against 50+ protected brands
+- Gray zone notification (non-blocking) when all secondary checks pass
+
+### Changed
+
+- `predict()` and `predictWithDetails()` now return `zone` (`safe`, `gray_zone`, `phishing`) and `rawProbability` in addition to `prediction` and `probability`
+- `Predictor` constructor accepts `grayZoneMargin` option (default: `0.10`)
+- `Predictor.setGrayZoneMargin(margin)` method added
+- `getInfo()` now includes `grayZoneMargin`
+- Post-processing log format improved for debugging: shows `raw`, `boost`, `scaled`, `final`
+- `manifest.json` updated: added `"dns"` permission for domain resolution
+- `package.json` updated: added `"type": "module"` for Node.js compatibility
+
+### Fixed
+
+- False positive root cause: post-processing no longer adds full boost to low-confidence legitimate URLs
+- Domain brand detection now correctly handles subdomains (e.g., `mail.google.com` → `google`)
+- Homoglyph detection: domains like `go0gle.com` with numeric character substitutions now properly detected
+
+### File Changes
+
+| File | Change |
+|---|---|
+| `src/ml/predictor.js` | Dynamic boost scaling, three-zone logic, `rawProbability` in output |
+| `src/background/navigationHandler.js` | Gray zone handling, DNS resolve, brand whitelist check, typosquatting integration |
+| `src/ai/typosquattingDetector.js` | **New** — pure JS typosquatting detector (3KB, zero dependencies) |
+| `src/utils/constants.js` | Added `PREDICTION_ZONE`, `THRESHOLD_CONFIG` constants |
+| `src/manifest.json` | Added `"dns"` permission |
+| `package.json` | Added `"type": "module"` |
+
 ## [Unreleased]
 
 ### Planned
 
-- Model quantization / pruning to reduce bundle size
+- Typosquatting detector brand list expansion
 - Content script for login form analysis
 - Local statistics dashboard (blocked sites count, detection rate)
-- Threshold sensitivity slider
 - WebAssembly-accelerated tree traversal
 - Automated test suite for CI/CD
 - Chrome Web Store submission package

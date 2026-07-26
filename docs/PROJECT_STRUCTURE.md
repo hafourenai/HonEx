@@ -36,6 +36,14 @@ Static assets used by the extension's UI pages.
 | `Logo.png` | HonEx logo (used in dashboard) |
 | `Foto.png` | Developer photo (used in About section) |
 
+### `src/ai/`
+
+Lightweight AI-powered detection modules (pure JavaScript, zero dependencies, zero additional downloads).
+
+| File | Purpose |
+|---|---|
+| `typosquattingDetector.js` | Typosquatting detector using Levenshtein distance + homoglyph decoding. Compares domain against 50+ protected brands (Google, Mandiri, BCA, Gojek, etc.) — catches `g00gle.com`, `rnandiri.com`, `shopee-sale.com`, etc. |
+
 ### `src/background/`
 
 Contains the extension's persistent background service worker (Manifest V3).
@@ -43,7 +51,7 @@ Contains the extension's persistent background service worker (Manifest V3).
 | File | Purpose |
 |---|---|
 | `service_worker.js` | **Entry point.** Registers navigation listener, handles runtime messages from popup/warning/settings/dashboard, manages model pre-loading on install and startup |
-| `navigationHandler.js` | URL analysis logic. Determines whether to skip internal URLs, runs feature extraction + prediction, and redirects to the warning page if phishing is detected. Respects warning mode (block/warn/log) |
+| `navigationHandler.js` | URL analysis logic. Determines whether to skip internal URLs, runs feature extraction + prediction, handles gray zone (brand whitelist, DNS resolve, typosquatting check), and redirects to the warning page if phishing is confirmed |
 | `modelManager.js` | Model lifecycle manager. Loads the `rf_trees.json` model file on first request, caches it in memory, and provides a singleton `Predictor` instance |
 
 ### `src/ml/`

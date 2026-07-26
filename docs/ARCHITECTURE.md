@@ -205,76 +205,86 @@ The ML system is a Random Forest classifier exported from scikit-learn and reimp
 User clicks link (https://www.youtube.com)
          │
          ▼
-webNavigation.onCommitted fires (skip auto_toplevel)
-         │
-         ▼
-handleNavigation(details, bypassedUrls, domainRedirectHistory)
-         │
-         ├── bypassedUrls.has(url) → false
-         │
-         ├── isProtectionEnabled() → true
-         │
-         ├── getWarningMode() → "block"
-         │
-         ├── shouldSkipUrl(url) → false
-         │
-         ├── analyzeUrl(url, domainRedirectHistory)
-         │       │
-         │       ├── lookup domain in domainRedirectHistory
-         │       │   → overrides.qty_redirects = 1 (from history)
-         │       │
-         │       ├── extractFeatures(url, overrides)
-         │       │       ├── parseUrl(url)
-         │       │       ├── countChar() × 20
-         │       │       ├── extractDomainFeatures()
-         │       │       ├── qty_mx_servers = 2 (default)
-         │       │       └── assemble 33-feature vector
-         │       │
-         │       ├── predictor.predict(features)
-         │       │       ├── validateFeatures()
-         │       │       ├── randomForest.predict()
-         │       │       │       └── walkTree() × 100
-         │       │       └── return { isPhishing: false, probability: 0.77 }
-         │       │
-         │       └── return { prediction: "safe", probability: 0.77 }
-         │
-         └── prediction === SAFE → do nothing (navigation proceeds)
-```
-
-### Phishing URL Flow
-
-```
-User clicks link (https://phish.example.com/login?ref=evil)
-         │
-         ▼
 webNavigation.onCommitted fires
          │
          ▼
 handleNavigation(details, bypassedUrls, domainRedirectHistory)
          │
-         ├── analyzeUrl(url, redirectHistory)
-         │       └── predictor.predict(features)
-         │               └── probability = 0.95, isPhishing = true
+         ├── bypassedUrls.has(url) → false
+         ├── isProtectionEnabled() → true
+         ├── getWarningMode() → "block"
+         ├── shouldSkipUrl(url) → false
          │
-         ├── prediction === PHISHING
+         ├── analyzeUrl(url, domainRedirectHistory)
+         │       │
+         │       ├── lookup domain in domainRedirectHistory
+         │       │   → overrides.qty_redirects = 1
+         │       │
+         │       ├── extractFeatures(url, overrides) → 33-feature vector
+         │       │
+         │       ├── predictor.predict(features)
+         │       │       └── probability = 0.77, zone = "safe"
+         │       │
+         │       └── return { prediction: "safe", zone: "safe" }
          │
-         ├── check warningMode:
-         │   ├── "block" → redirectToWarning(tabId, url, 0.95)
-         │   │       │
-         │   │       └── chrome.tabs.update(tabId, {
-         │   │             url: "warning.html?targetUrl=...&probability=0.95"
-         │   │           })
-         │   │
-         │   ├── "warn" → chrome.notifications.create()
-         │   │       (page continues loading with visible warning)
-         │   │
-         │   └── "log" → console.log only
+         └── zone === SAFE → do nothing (navigation proceeds)
+```
+
+### Phishing URL Flow (High Confidence)
+
+```
+User clicks link (https://phish.example.com/login?ref=evil)
          │
          ▼
-    Warning Page displays:
-    - Original URL
-    - Confidence: 95%
-    - [Go Back] [Continue Anyway]
+handleNavigation(details)
+         │
+         ├── analyzeUrl(url)
+         │       ├── predictor.predict(features)
+         │       │       └── probability = 0.96, zone = "phishing"
+         │       └── return { prediction: "phishing", zone: "phishing" }
+         │
+         ├── zone === PHISHING → block/warn based on warningMode
+         │
+         └── "block" → redirectToWarning(tabId, url, 0.96)
+                 │
+                 └── chrome.tabs.update(tabId, {
+                       url: "warning.html?targetUrl=...&probability=0.96"
+                     })
+```
+
+### Gray Zone Flow (Medium Confidence)
+
+```
+User clicks link (https://cdn-cf-01.project.com/assets/main.js)
+         │
+         ▼
+handleNavigation(details)
+         │
+         ├── analyzeUrl(url)
+         │       ├── predictor.predict(features)
+         │       │       └── probability = 0.84, zone = "gray_zone"
+         │       │
+         │       ├── [1] Brand whitelist check
+         │       │   └── domain contains known brand?
+         │       │       ├── YES → return { prediction: "safe", zone: "safe" }
+         │       │       └── NO  → continue
+         │       │
+         │       ├── [2] DNS resolution check
+         │       │   └── chrome.dns.resolve(domain)
+         │       │       ├── no addresses → return { prediction: "phishing", zone: "gray_zone" }
+         │       │       └── resolves     → continue
+         │       │
+         │       ├── [3] Typosquatting check
+         │       │   └── typosquattingDetector.analyzeWithAI(url, domain)
+         │       │       ├── DETECTED → return { prediction: "phishing", zone: "phishing" }
+         │       │       └── clear    → continue
+         │       │
+         │       └── all checks pass
+         │           → return { prediction: "legitimate", zone: "gray_zone" }
+         │
+         └── zone === GRAY_ZONE
+             └── showGrayZoneNotification() — non-blocking notification
+                 (page continues loading, user is informed but not blocked)
 ```
 
 ### Continue Anyway Flow
@@ -315,18 +325,19 @@ warning.js:
 | Component | Responsibility |
 |---|---|
 | **Service Worker** | Message router, navigation listener, model lifecycle, redirect tracking (`redirectCounts`, `domainRedirectHistory`), bypass set management |
-| **Navigation Handler** | URL analysis orchestration (via `onCommitted`), bypass check, skip-list, domain redirect lookup, feature extraction with overrides, warning redirect (block) / notification (warn) |
+| **Navigation Handler** | URL analysis orchestration (via `onCommitted`), bypass check, skip-list, domain redirect lookup, feature extraction with overrides, gray zone secondary checks (brand whitelist, DNS resolve, typosquatting), warning redirect (block) / notification (warn) |
 | **Model Manager** | Singleton predictor cache, lazy loading |
-| **Predictor** | Feature validation, threshold config, Random Forest inference, **Platt scaling calibration**, result formatting |
+| **Predictor** | Feature validation, threshold config, three-zone decision boundary, dynamic post-processing boost scaling, Random Forest inference, result formatting |
 | **Random Forest** | Soft-voting aggregation, raw class probability computation |
 | **Decision Tree** | Single tree traversal following scikit-learn node structure |
 | **Forest Loader** | Model fetch, parse, structural validation |
+| **Typosquatting Detector** | Levenshtein distance + homoglyph decoder for domain impersonation detection against 50+ protected brands |
 | **Feature Builder** | 33-feature extraction orchestration, external feature defaults (`qty_mx_servers=2`, `qty_redirects=1`), override support |
 | **URL Parser** | URL → {domain, directory, file, params} decomposition |
 | **Domain Features** | Domain-specific metrics (length, dots, hyphens, vowels) |
 | **Char Counter** | Character occurrence counting utility |
 | **Storage** | `chrome.storage.sync` wrapper with typed accessors |
-| **Constants** | Enums, storage keys, defaults (threshold=0.85), warning page config |
+| **Constants** | Enums, storage keys, defaults (threshold=0.85), three-zone config, warning page config |
 
 ---
 
@@ -335,7 +346,16 @@ warning.js:
 | Parameter | Default | Description |
 |---|---|---|
 | **Threshold** | 0.85 | Minimum probability to classify as phishing |
+| **Gray Zone Margin** | ±0.10 | Width of the gray zone around threshold (safe < 0.75, gray zone 0.75–0.95, phishing > 0.95) |
 | **Warning Mode** | `block` | `block` = redirect to warning page, `warn` = show notification (page loads), `log` = console log only |
-| **qty_mx_servers** | 2 | External feature default (DNS lookup unavailable in browser) |
+| **qty_mx_servers** | 2 | External feature default (DNS MX lookup unavailable in browser) |
 | **qty_redirects** | 1 | External feature default (tracked via webNavigation API) |
 | **Bypass TTL** | 30s | How long a bypassed URL remains whitelisted |
+
+### Gray Zone Secondary Checks
+
+| Check | When | Action on Match |
+|---|---|---|
+| **Brand whitelist** | Domain contains a known brand (Google, Mandiri, etc.) | Reclassify as **SAFE** |
+| **DNS resolution** | Domain fails to resolve via `chrome.dns.resolve()` | Return **GRAY_ZONE** (notify only, don't block) |
+| **Typosquatting** | Domain is a typosquat of a protected brand (Levenshtein ≤ threshold or homoglyph match) | Reclassify as **PHISHING** (block) |
