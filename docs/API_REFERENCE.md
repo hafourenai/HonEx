@@ -4,6 +4,47 @@ Complete documentation of all major classes, functions, and modules in HonEx.
 
 ---
 
+## 0. AI Detection (`src/ai/`)
+
+### Typosquatting Detector (`typosquattingDetector.js`)
+
+Pure JavaScript domain typosquatting detector. Compares domain base names against 50+ protected brands using Levenshtein distance and homoglyph decoding. Zero dependencies, zero additional downloads.
+
+#### Exported Functions
+
+```javascript
+import { analyzeWithAI, isAIAvailable } from '../ai/typosquattingDetector.js';
+```
+
+| Function | Returns | Description |
+|---|---|---|
+| `isAIAvailable()` | `Promise<true>` | Always returns `true` (pure JS, runs everywhere) |
+| `analyzeWithAI(url, domain)` | `Promise<object \| null>` | Check domain for typosquatting |
+
+#### `analyzeWithAI()` Response
+
+```javascript
+// Typosquatting detected:
+{
+  verdict: 'phishing',
+  reason: '"g00gle" typosquatting "google" (100% similar)'
+}
+
+// No typosquatting:
+null
+```
+
+#### Detection Algorithm
+
+1. **Normalize domain**: extract second-level domain (e.g., `g00gle.com` → `g00gle`)
+2. **Decode homoglyphs**: map visually similar characters (`0→o`, `1→i`, `5→s`, `rn→m`, `vv→w`, etc.)
+3. **Levenshtein distance**: compare decoded domain against each brand's decoded name
+4. **Threshold**: 1 edit for ≤4 char brands, 2 for 5–7 char, 3 for 8+ char
+5. **Embedded brand**: check if decoded domain contains a brand name + extra characters
+6. **Exact match skip**: if decoded domain equals brand exactly, it's the legitimate site (not a typosquat)
+
+---
+
 ## 1. ML Inference Engine (`src/ml/`)
 
 ### `Predictor` class (`predictor.js`)
@@ -19,7 +60,8 @@ new Predictor(model, options?)
 | Param | Type | Default | Description |
 |---|---|---|---|
 | `model` | `object` | required | Validated Random Forest model object |
-| `options.threshold` | `number` | `0.5` | Phishing probability threshold (0.0–1.0) |
+| `options.threshold` | `number` | `0.85` | Phishing probability threshold (0.0–1.0) |
+| `options.grayZoneMargin` | `number` | `0.10` | Width of the gray zone around threshold |
 
 #### Static Methods
 
@@ -31,11 +73,12 @@ new Predictor(model, options?)
 
 | Method | Returns | Description |
 |---|---|---|
-| `predict(features)` | `PredictionResult` | Predict single feature vector |
+| `predict(features)` | `PredictionResult` | Predict single feature vector (includes `zone` and `rawProbability`) |
 | `predictWithDetails(features)` | `DetailedResult` | Predict with full debug information |
 | `predictBatch(featuresBatch)` | `PredictionResult[]` | Predict multiple feature vectors |
 | `setThreshold(threshold)` | `void` | Change threshold at runtime |
-| `getInfo()` | `ModelInfo` | Get model metadata + current threshold |
+| `setGrayZoneMargin(margin)` | `void` | Change gray zone margin at runtime (0.0–0.5) |
+| `getInfo()` | `ModelInfo` | Get model metadata + current threshold + gray zone margin |
 | `validateFeatures(features)` | `void` | Validate input (throws on error) |
 
 #### `PredictionResult` Object
@@ -44,11 +87,22 @@ new Predictor(model, options?)
 {
   prediction: 'phishing' | 'legitimate',
   isPhishing: boolean,
-  probability: number,    // 0.0 – 1.0
+  zone: 'safe' | 'gray_zone' | 'phishing',  // three-zone decision
+  probability: number,    // 0.0 – 1.0 (after post-processing)
+  rawProbability: number, // 0.0 – 1.0 (before post-processing)
   confidence: number,     // 0.5 – 1.0
-  threshold: number       // current threshold
+  threshold: number,      // current threshold
+  grayZoneMargin: number  // current gray zone margin
 }
 ```
+
+**Three-Zone Decision**:
+
+| Zone | Condition | Action |
+|---|---|---|
+| `safe` | probability < threshold - margin | Allow navigation |
+| `gray_zone` | \|probability - threshold\| ≤ margin | Secondary checks |
+| `phishing` | probability > threshold + margin | Block navigation |
 
 #### `DetailedResult` Object
 
@@ -330,12 +384,14 @@ All storage functions use `chrome.storage.sync` with automatic fallback to defau
 ### Constants (`constants.js`)
 
 ```javascript
-PREDICTION:    { SAFE: 'safe', PHISHING: 'phishing', ERROR: 'error' }
-STORAGE_KEYS:  { PROTECTION_ENABLED, THEME, NOTIFICATIONS_ENABLED, THRESHOLD, WARNING_MODE }
-DEFAULTS:      { PROTECTION_ENABLED: true, THEME: 'light', ... }
-WARNING_MODES: { BLOCK: 'block', WARN: 'warn', LOG: 'log' }
-WARNING_PAGE:  { PATH: '/warning/warning.html', URL_PARAM: 'targetUrl', PROB_PARAM: 'probability' }
-EXTENSION_NAME: 'HonEx'
+PREDICTION:       { SAFE: 'safe', PHISHING: 'phishing', ERROR: 'error' }
+PREDICTION_ZONE:  { SAFE: 'safe', GRAY_ZONE: 'gray_zone', PHISHING: 'phishing' }
+THRESHOLD_CONFIG: { GRAY_ZONE_MARGIN: 0.10, DEFAULT: 0.85, MIN: 0.0, MAX: 1.0 }
+STORAGE_KEYS:     { PROTECTION_ENABLED, THEME, NOTIFICATIONS_ENABLED, THRESHOLD, WARNING_MODE }
+DEFAULTS:         { PROTECTION_ENABLED: true, THEME: 'light', ... }
+WARNING_MODES:    { BLOCK: 'block', WARN: 'warn', LOG: 'log' }
+WARNING_PAGE:     { PATH: '/warning/warning.html', URL_PARAM: 'targetUrl', PROB_PARAM: 'probability' }
+EXTENSION_NAME:   'HonEx'
 ```
 
 ---
@@ -346,7 +402,7 @@ EXTENSION_NAME: 'HonEx'
 
 | Message Type | Request Payload | Response |
 |---|---|---|
-| `CHECK_URL` | `{ url: string }` | `{ prediction, probability, error? }` |
+| `CHECK_URL` | `{ url: string }` | `{ prediction, probability, zone, error? }` |
 | `GET_STATUS` | `{}` | `{ protectionEnabled, threshold, modelLoaded }` |
 | `SET_PROTECTION` | `{ enabled: boolean }` | `{ success }` or `{ error }` |
 | `SET_THRESHOLD` | `{ threshold: number }` | `{ success }` or `{ error }` |
@@ -357,26 +413,55 @@ EXTENSION_NAME: 'HonEx'
 ### `analyzeUrl()` (`navigationHandler.js`)
 
 ```javascript
-analyzeUrl(url)
+analyzeUrl(url, redirectHistory?)
+```
+
+| Param | Type | Default | Description |
+|---|---|---|---|
+| `url` | `string` | required | URL to analyze |
+| `redirectHistory` | `Map<string, number>` | `new Map()` | Per-domain redirect counts for `qty_redirects` override |
+
+**Returns**: `Promise<AnalyzeResult>`
+
+```javascript
+{
+  prediction: 'safe' | 'phishing' | 'error',
+  probability: number,        // 0.0 – 1.0
+  rawProbability: number,     // before post-processing
+  zone: 'safe' | 'gray_zone' | 'phishing',
+  aiVerdict?: 'phishing',     // present if typosquatting detected
+  aiReason?: string,          // explanation from typosquatting detector
+  error: string | null        // null unless prediction === 'error'
+}
+```
+
+Skips internal URLs (`chrome-extension://`, `chrome://`, `about:`, etc.). In gray zone, performs secondary checks: brand whitelist → DNS resolve → typosquatting detection.
+
+### `handleNavigation()` (`navigationHandler.js`)
+
+Event handler for `chrome.webNavigation.onCommitted`.
+
+```javascript
+handleNavigation(details, bypassedUrls, domainRedirectHistory)
 ```
 
 | Param | Type | Description |
 |---|---|---|
-| `url` | `string` | URL to analyze |
-
-**Returns**: `Promise<{ prediction: string, probability: number, error: string | null }>`
-
-Skips internal URLs (`chrome-extension://`, `chrome://`, `about:`, etc.).
-
-### `handleNavigation()` (`navigationHandler.js`)
-
-Event handler for `chrome.webNavigation.onBeforeNavigate`.
-
-```javascript
-handleNavigation(details)
-```
+| `details` | `object` | Navigation event details from `chrome.webNavigation` |
+| `bypassedUrls` | `Set<string>` | URLs whitelisted via "Continue Anyway" (30s TTL) |
+| `domainRedirectHistory` | `Map<string, number>` | Per-domain redirect counts for feature override |
 
 Only processes main frame navigations (`details.frameId === 0`). Respects protection toggle and warning mode.
+
+**Decision Flow**:
+
+1. **Safe zone** (prob < 0.75) → Allow navigation
+2. **Phishing zone** (prob > 0.95) → Block/warn based on warning mode
+3. **Gray zone** (0.75–0.95) → Secondary checks:
+   - Brand whitelist match → reclassify as safe
+   - DNS resolve fail → notify only (don't block)
+   - Typosquatting detected → block as phishing
+   - All clear → non-blocking notification
 
 ### `getPredictor()` (`modelManager.js`)
 

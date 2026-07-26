@@ -24,7 +24,7 @@ Common problems encountered while installing, loading, or using HonEx, with solu
 
 3. **Select the correct folder**: When loading unpacked, select the `src/` folder (containing `manifest.json`), not the project root.
 
-4. **Check permissions**: Ensure `webNavigation`, `storage`, and `tabs` permissions are present in `manifest.json`.
+4. **Check permissions**: Ensure `webNavigation`, `storage`, `tabs`, and `dns` permissions are present in `manifest.json`. Note: `dns` permission is optional — the extension falls back gracefully if `chrome.dns.resolve()` is not available.
 
 5. **Check for conflicting extensions**: Temporarily disable other extensions that intercept navigation (ad blockers, security extensions) to isolate conflicts.
 
@@ -58,6 +58,14 @@ Common problems encountered while installing, loading, or using HonEx, with solu
    ```bash
    cp trash/hasil/rf_trees.json src/ml/rf_trees.json
    ```
+
+### "dns" permission warning
+
+**Symptom**: Chrome displays a permission warning about "Read your DNS settings" during installation, or the extension console shows DNS-related errors.
+
+**Explanation**: HonEx uses `chrome.dns.resolve()` as an optional secondary check for gray zone URLs. If `chrome.dns` is not available (older Chrome, non-Chromium browser, or the permission was removed), the extension works without it — the DNS check is simply skipped and the gray zone falls back to its default behavior (non-blocking notification).
+
+**Solution**: No action needed. The DNS feature is optional and gracefully degrades. The extension protects against phishing with or without this permission.
 
 ---
 

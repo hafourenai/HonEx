@@ -35,7 +35,8 @@
     "webNavigation",
     "storage",
     "tabs",
-    "notifications"
+    "notifications",
+    "dns"
   ],
 
   "host_permissions": [

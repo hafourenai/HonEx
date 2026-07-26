@@ -17,16 +17,18 @@ HonEx addresses both problems:
 
 ## Features
 
-| Feature                    | Description                                                                         |
-| -------------------------- | ----------------------------------------------------------------------------------- |
-| **On-device ML**           | 100-tree Random Forest runs entirely in the browser via pure JavaScript             |
-| **Real-time interception** | `webNavigation` API blocks phishing pages before they load                          |
-| **33 URL features**        | Extracts character counts, domain metrics, structural patterns, and anomaly signals |
-| **95.16% accuracy**        | Trained on real-world phishing datasets with 93.12% precision and 93.02% recall     |
-| **Privacy-first**          | No network requests, no telemetry, no third-party APIs                              |
-| **Dashboard**              | Live protection status, model health, and toggle controls                           |
-| **Settings**               | Persistent configuration via `chrome.storage.sync`                                  |
-| **Warning page**           | Clear threat display with confidence score, Go Back, and Continue Anyway            |
+| Feature                       | Description                                                                 |
+| ----------------------------- | --------------------------------------------------------------------------- |
+| **On-device ML**              | 100-tree Random Forest runs entirely in the browser via pure JavaScript     |
+| **Three-zone detection**      | Safe, gray zone (secondary checks), and phishing — not just a binary flag   |
+| **Typosquatting detector**    | Levenshtein distance + homoglyph decoding catches domain impersonation      |
+| **Real-time interception**    | `webNavigation` API blocks phishing pages before they load                  |
+| **33 URL features**           | Extracts character counts, domain metrics, structural patterns, and more    |
+| **95.16% accuracy**           | Trained on real-world phishing datasets with 93.12% precision               |
+| **Gray zone handling**        | Brand whitelist + DNS resolve + typosquatting check before deciding         |
+| **Privacy-first**             | No network requests, no telemetry, no third-party APIs                      |
+| **Zero dependencies**         | Pure JavaScript — no build tools, no package manager needed                 |
+| **Warning page**              | Threat confidence score, Go Back, and Continue Anyway                       |
 
 ---
 
@@ -50,6 +52,7 @@ HonEx addresses both problems:
 ```
 HonEx/
 ├── src/                    # Chrome Extension source
+│   ├── ai/                 Typosquatting & lightweight detection modules
 │   ├── assets/             Icons, logo, developer photo
 │   ├── background/         Service worker, navigation handler, model manager
 │   ├── dashboard/          About / status page
@@ -107,12 +110,17 @@ HonEx/
 ## Workflow Overview
 
 1. User clicks a link or types a URL
-2. `chrome.webNavigation.onBeforeNavigate` fires in the background service worker
+2. `chrome.webNavigation.onCommitted` fires in the background service worker
 3. The navigation handler extracts 33 structural features from the URL
 4. The Random Forest engine scores the URL (100 decision trees, majority vote)
-5. **If safe** → navigation proceeds normally (no delay)
-6. **If phishing** → tab redirects to the local warning page with confidence score
-7. User can **Go Back** or **Continue Anyway** (with a 30-second bypass window)
+5. **Three-zone decision**:
+   - **Safe zone** (prob < 0.75) → navigation proceeds normally
+   - **Phishing zone** (prob > 0.95) → tab redirects to warning page
+   - **Gray zone** (0.75–0.95) → secondary checks run:
+     - Known brand whitelist? → safe
+     - Typosquatting detected? → phishing
+     - Unclear → non-blocking notification
+6. User can **Go Back** or **Continue Anyway** (30-second bypass window)
 
 ---
 
@@ -142,26 +150,28 @@ Detailed instructions in [`INSTALLATION.md`](INSTALLATION.md).
 
 ## Performance
 
-| Metric         | Value                       |
-| -------------- | --------------------------- |
-| Model Accuracy | 95.16%                      |
-| Precision      | 93.12%                      |
-| Recall         | 93.02%                      |
-| F1 Score       | 93.07%                      |
-| ROC-AUC        | 0.9876                      |
-| Features       | 33                          |
-| Decision Trees | 100                         |
-| Inference Time | < 5ms (typical)             |
-| Model Size     | ≈ 23 MB (uncompressed JSON) |
+| Metric                     | Value                       |
+| -------------------------- | --------------------------- |
+| Model Accuracy             | 95.16%                      |
+| Precision                  | 93.12%                      |
+| Recall                     | 93.02%                      |
+| ROC-AUC                    | 0.9876                      |
+| Features                   | 33                          |
+| Decision Trees             | 100                         |
+| RF Inference Time          | < 5ms (typical)             |
+| Typosquatting Check Time   | < 1ms (pure JS)             |
+| Model Size                 | ≈ 23 MB (uncompressed JSON) |
+| AI Detector Size           | ~3 KB (zero dependencies)   |
 
 ---
 
 ## Troubleshooting
 
-| Problem                                                 | Solution                                   |
-| ------------------------------------------------------- | ------------------------------------------ |
-| Extension won't load                                    | Verify Chrome version ≥ 88 (MV3 support)   |
-| Model not loading                                       | Check that `rf_trees.json` is in `src/ml/` |
-| Warning page loops                                      | Fixed in v1.0.0 — bypass mechanism active  |
-| Protection not working                                  | Check toggle in popup or settings          |
+| Problem                                                 | Solution                                        |
+| ------------------------------------------------------- | ----------------------------------------------- |
+| Extension won't load                                    | Verify Chrome version ≥ 88 (MV3 support)        |
+| Model not loading                                       | Check that `rf_trees.json` is in `src/ml/`      |
+| "dns" permission error                                  | Chrome may not support `chrome.dns` — extension works without it (falls back gracefully) |
+| Warning page loops                                      | Fixed in v1.0.0 — bypass mechanism active       |
+| Protection not working                                  | Check toggle in popup or settings               |
 | See [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) for more |

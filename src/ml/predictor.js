@@ -1,12 +1,15 @@
 import { loadForestModel } from './forestLoader.js';
 import { RandomForest } from './randomForest.js';
+import { THRESHOLD_CONFIG } from '../utils/constants.js';
 
-const DEFAULT_THRESHOLD = 0.85;
+const DEFAULT_THRESHOLD = THRESHOLD_CONFIG.DEFAULT;
+const DEFAULT_GRAY_ZONE_MARGIN = THRESHOLD_CONFIG.GRAY_ZONE_MARGIN;
 
 export class Predictor {
   constructor(model, options = {}) {
     this.forest = new RandomForest(model);
     this.threshold = options.threshold ?? DEFAULT_THRESHOLD;
+    this.grayZoneMargin = options.grayZoneMargin ?? DEFAULT_GRAY_ZONE_MARGIN;
   }
 
   static async create(source, options = {}) {
@@ -72,15 +75,33 @@ export class Predictor {
       boost += 0.05;
     }
 
-    const probability = Math.min(rawProbability + boost, 1.0);
+    let scaledBoost = 0;
+    if (boost > 0) {
+      if (rawProbability >= 0.5) {
+        const certainty = 2 * Math.abs(rawProbability - 0.5);
+        const scalingFactor = 1 - certainty;
+        scaledBoost = boost * scalingFactor;
+      }
+    }
+
+    const probability = Math.min(rawProbability + scaledBoost, 1.0);
 
     if (boost > 0) {
       console.log(
-        `[HonEx] Post-process boost: raw=${rawProbability.toFixed(4)} boost=${boost.toFixed(2)} final=${probability.toFixed(4)}`
+        `[HonEx] Post-process: raw=${rawProbability.toFixed(4)} boost=${boost.toFixed(2)}` +
+        ` scaled=${scaledBoost.toFixed(4)} final=${probability.toFixed(4)}`
       );
     }
 
     return probability;
+  }
+
+  _determineZone(probability) {
+    const lower = this.threshold - this.grayZoneMargin;
+    const upper = this.threshold + this.grayZoneMargin;
+    if (probability >= upper) return 'phishing';
+    if (probability <= lower) return 'safe';
+    return 'gray_zone';
   }
 
   predict(features) {
@@ -89,12 +110,16 @@ export class Predictor {
     const rawProbability = rfResult.phishingProbability;
     const probability = this._applyPostProcess(features, rawProbability);
     const isPhishing = probability > this.threshold;
+    const zone = this._determineZone(probability);
     return {
       prediction: isPhishing ? 'phishing' : 'legitimate',
       isPhishing,
+      zone,
       probability,
+      rawProbability,
       confidence: rfResult.confidence,
-      threshold: this.threshold
+      threshold: this.threshold,
+      grayZoneMargin: this.grayZoneMargin
     };
   }
 
@@ -104,6 +129,7 @@ export class Predictor {
     const rawProbability = rfResult.phishingProbability;
     const probability = this._applyPostProcess(features, rawProbability);
     const isPhishing = probability > this.threshold;
+    const zone = this._determineZone(probability);
     const featureValues = {};
     for (let i = 0; i < this.forest.featureNames.length; i++) {
       featureValues[this.forest.featureNames[i]] = features[i];
@@ -111,10 +137,12 @@ export class Predictor {
     return {
       prediction: isPhishing ? 'phishing' : 'legitimate',
       isPhishing,
+      zone,
       probability,
       rawProbability,
       confidence: rfResult.confidence,
       threshold: this.threshold,
+      grayZoneMargin: this.grayZoneMargin,
       classProbabilities: rfResult.classProbabilities,
       nEstimators: this.forest.nEstimators,
       featureValues
@@ -132,10 +160,18 @@ export class Predictor {
     this.threshold = threshold;
   }
 
+  setGrayZoneMargin(margin) {
+    if (typeof margin !== 'number' || margin < 0 || margin > 0.5) {
+      throw new Error('Gray zone margin harus berupa angka antara 0.0 dan 0.5');
+    }
+    this.grayZoneMargin = margin;
+  }
+
   getInfo() {
     return {
       ...this.forest.getModelInfo(),
-      threshold: this.threshold
+      threshold: this.threshold,
+      grayZoneMargin: this.grayZoneMargin
     };
   }
 }

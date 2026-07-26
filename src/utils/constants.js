@@ -26,6 +26,19 @@ export const WARNING_MODES = Object.freeze({
   LOG: 'log'
 });
 
+export const PREDICTION_ZONE = Object.freeze({
+  SAFE: 'safe',
+  GRAY_ZONE: 'gray_zone',
+  PHISHING: 'phishing'
+});
+
+export const THRESHOLD_CONFIG = Object.freeze({
+  GRAY_ZONE_MARGIN: 0.10,
+  DEFAULT: 0.85,
+  MIN: 0.0,
+  MAX: 1.0
+});
+
 export const NAVIGATION_EVENTS = Object.freeze({
   BEFORE_NAVIGATE: 'webNavigation.onBeforeNavigate',
   COMPLETED: 'webNavigation.onCompleted',

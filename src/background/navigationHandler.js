@@ -1,7 +1,8 @@
 import { extractFeatures } from '../featureExtractor/featureBuilder.js';
 import { getPredictor } from './modelManager.js';
 import { isProtectionEnabled, getThreshold, getWarningMode, isNotificationsEnabled } from '../utils/storage.js';
-import { PREDICTION, WARNING_PAGE, WARNING_MODES } from '../utils/constants.js';
+import { PREDICTION, PREDICTION_ZONE, WARNING_PAGE, WARNING_MODES } from '../utils/constants.js';
+import { analyzeWithAI, isAIAvailable } from '../ai/typosquattingDetector.js';
 
 const IPV4_REGEX = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
 
@@ -13,11 +14,9 @@ function isSearchEngine(url) {
   try {
     const hostname = new URL(url).hostname.toLowerCase();
 
-    // Google dan semua varian negaranya (google.com, google.co.id, google.de, dll)
     if (/^(www\.)?google\.(com|co\.\w{2}|\w{2})$/.test(hostname)) return true;
     if (/^.+\.google\.(com|co\.\w{2}|\w{2})$/.test(hostname)) return true;
 
-    // Search engine lainnya
     const domains = ['bing.com', 'duckduckgo.com', 'search.yahoo.com', 'yandex.com', 'baidu.com'];
     return domains.some(d => hostname === d || hostname.endsWith('.' + d));
   } catch {
@@ -44,12 +43,52 @@ function shouldSkipUrl(url) {
   return false;
 }
 
+async function resolveDomain(domain) {
+  try {
+    if (typeof chrome.dns?.resolve === 'function') {
+      const result = await chrome.dns.resolve(domain);
+      if (result?.addresses) {
+        return { resolved: true, addresses: result.addresses, count: result.addresses.length };
+      }
+    }
+  } catch {}
+  return { resolved: false, addresses: [], count: 0 };
+}
+
+function getRegistrableDomain(hostname) {
+  const parts = hostname.toLowerCase().replace(/^www\./, '').split('.');
+  if (parts.length < 2) return hostname;
+  const tld = parts[parts.length - 1];
+  if (tld.length <= 3 && parts.length >= 3) {
+    return parts[parts.length - 3] + '.' + parts[parts.length - 2] + '.' + tld;
+  }
+  return parts[parts.length - 2] + '.' + parts[parts.length - 1];
+}
+
+function isHighValueBrand(domain) {
+  const brands = [
+    'google', 'facebook', 'instagram', 'whatsapp', 'twitter', 'x.com',
+    'linkedin', 'youtube', 'tiktok', 'amazon', 'apple', 'microsoft',
+    'github', 'gitlab', 'netflix', 'spotify', 'paypal', 'stripe',
+    'shopify', 'wordpress', 'cloudflare', 'dropbox', 'docusign',
+    'adobe', 'canva', 'zoom', 'teams', 'office', 'outlook', 'hotmail',
+    'gmail', 'yahoo', 'binance', 'coinbase', 'mandiri',
+    'bca', 'bni', 'bri', 'gojek', 'grab', 'tokopedia', 'shopee',
+    'bukalapak', 'lazada', 'blibli', 'traveloka'
+  ];
+  if (!domain) return false;
+  const registrable = getRegistrableDomain(domain);
+  const base = registrable.split('.')[0];
+  return brands.some(brand => base === brand || base.includes(brand));
+}
+
 export async function analyzeUrl(url, redirectHistory = new Map()) {
   try {
     if (shouldSkipUrl(url)) {
       return {
         prediction: PREDICTION.SAFE,
         probability: 0,
+        zone: PREDICTION_ZONE.SAFE,
         error: null
       };
     }
@@ -68,12 +107,12 @@ export async function analyzeUrl(url, redirectHistory = new Map()) {
       }
     } catch {}
 
-    // Pre-filter: obvious phishing patterns (bypass ML entirely)
     if (domain && isIpAddress(domain)) {
       console.log(`[HonEx] PRE-FILTER PHISHING (IP address): ${url}`);
       return {
         prediction: PREDICTION.PHISHING,
         probability: 0.99,
+        zone: PREDICTION_ZONE.PHISHING,
         error: null
       };
     }
@@ -83,6 +122,7 @@ export async function analyzeUrl(url, redirectHistory = new Map()) {
       return {
         prediction: PREDICTION.PHISHING,
         probability: 0.95,
+        zone: PREDICTION_ZONE.PHISHING,
         error: null
       };
     }
@@ -91,13 +131,73 @@ export async function analyzeUrl(url, redirectHistory = new Map()) {
     const result = predictor.predict(features);
 
     console.log(
-      `[HonEx] analyzeUrl | url="${url}" prob=${result.probability.toFixed(4)} threshold=${threshold} isPhishing=${result.isPhishing}`
+      `[HonEx] analyzeUrl | url="${url}" prob=${result.probability.toFixed(4)} ` +
+      `raw=${result.rawProbability.toFixed(4)} zone=${result.zone} ` +
+      `threshold=${threshold} isPhishing=${result.isPhishing}`
     );
-    console.log('[HonEx] feature debug:', featureOrder.map((name, i) => `${name}=${features[i]}`).join(' '));
+
+    if (result.zone === PREDICTION_ZONE.GRAY_ZONE) {
+      const brandMatch = domain ? isHighValueBrand(domain) : false;
+      if (brandMatch) {
+        console.log(`[HonEx] GRAY ZONE — high-value brand domain detected: ${domain}, reclassifying as safe`);
+        return {
+          prediction: PREDICTION.SAFE,
+          probability: result.probability,
+          rawProbability: result.rawProbability,
+          zone: PREDICTION_ZONE.SAFE,
+          error: null
+        };
+      }
+
+      const dnsResult = await resolveDomain(domain);
+      if (dnsResult.resolved && !dnsResult.count) {
+        console.log(`[HonEx] GRAY ZONE — domain tidak resolve: ${domain}, tetap flag phishing`);
+        return {
+          prediction: PREDICTION.PHISHING,
+          probability: result.probability,
+          rawProbability: result.rawProbability,
+          zone: PREDICTION_ZONE.GRAY_ZONE,
+          error: null
+        };
+      }
+
+      const aiAvailable = await isAIAvailable();
+      if (aiAvailable) {
+        console.log(`[HonEx] GRAY ZONE — running AI analysis for: ${url}`);
+        const aiResult = await analyzeWithAI(url, domain);
+        if (aiResult) {
+          console.log(`[HonEx] AI verdict: ${aiResult.verdict} — ${aiResult.reason}`);
+          if (aiResult.verdict === 'phishing') {
+            return {
+              prediction: PREDICTION.PHISHING,
+              probability: result.probability,
+              rawProbability: result.rawProbability,
+              zone: PREDICTION_ZONE.PHISHING,
+              aiVerdict: aiResult.verdict,
+              aiReason: aiResult.reason,
+              error: null
+            };
+          }
+          if (aiResult.verdict === 'legitimate') {
+            return {
+              prediction: PREDICTION.SAFE,
+              probability: result.probability,
+              rawProbability: result.rawProbability,
+              zone: PREDICTION_ZONE.SAFE,
+              aiVerdict: aiResult.verdict,
+              aiReason: aiResult.reason,
+              error: null
+            };
+          }
+        }
+      }
+    }
 
     return {
       prediction: result.isPhishing ? PREDICTION.PHISHING : PREDICTION.SAFE,
       probability: result.probability,
+      rawProbability: result.rawProbability,
+      zone: result.zone,
       error: null
     };
   } catch (err) {
@@ -105,6 +205,7 @@ export async function analyzeUrl(url, redirectHistory = new Map()) {
     return {
       prediction: PREDICTION.ERROR,
       probability: 0,
+      zone: PREDICTION_ZONE.SAFE,
       error: err.message
     };
   }
@@ -124,6 +225,28 @@ async function redirectToWarning(tabId, targetUrl, probability) {
   }
 }
 
+async function showGrayZoneNotification(tabId, url, probability, warningMode) {
+  console.log(
+    `[HonEx] GRAY ZONE — suspicious tapi borderline: ${url} ` +
+    `(confidence: ${(probability * 100).toFixed(1)}%)`
+  );
+
+  if (warningMode === WARNING_MODES.WARN || warningMode === WARNING_MODES.BLOCK) {
+    const notifEnabled = await isNotificationsEnabled();
+    if (notifEnabled) {
+      try {
+        await chrome.notifications.create({
+          type: 'basic',
+          iconUrl: chrome.runtime.getURL('assets/Logo.png'),
+          title: 'HonEx — Mencurigakan (Borderline)',
+          message: `URL ini terlihat mencurigakan: ${url}\nConfidence: ${(probability * 100).toFixed(1)}%`,
+          priority: 1
+        });
+      } catch {}
+    }
+  }
+}
+
 export async function handleNavigation(details, bypassedUrls = new Set(), domainRedirectHistory = new Map()) {
   if (details.frameId !== 0) return;
 
@@ -136,6 +259,11 @@ export async function handleNavigation(details, bypassedUrls = new Set(), domain
   if (warningMode === WARNING_MODES.LOG) return;
 
   const result = await analyzeUrl(details.url, domainRedirectHistory);
+
+  if (result.zone === PREDICTION_ZONE.GRAY_ZONE) {
+    await showGrayZoneNotification(details.tabId, details.url, result.probability, warningMode);
+    return;
+  }
 
   if (result.prediction === PREDICTION.PHISHING) {
     console.log(

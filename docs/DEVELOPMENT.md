@@ -52,6 +52,7 @@ There is **no build step**. All changes are reflected immediately after refreshi
 
 ```
 src/
+├── ai/               Lightweight detection modules (typosquatting, etc.)
 ├── ml/               Machine learning inference engine
 ├── featureExtractor/ URL feature extraction
 ├── background/       Extension background (service worker)
